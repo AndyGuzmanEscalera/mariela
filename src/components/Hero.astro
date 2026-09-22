@@ -1,0 +1,140 @@
+---
+import SurpriseButton from './SurpriseButton.astro';
+---
+
+<section
+  id="hero"
+  class="relative min-h-screen flex items-center justify-center pt-16 pb-20 px-5 overflow-hidden"
+>
+  <!-- Decorative SVG sunburst -->
+  <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
+    <svg
+      class="w-[1200px] max-w-none opacity-[0.18] animate-spin-slow"
+      viewBox="0 0 800 800"
+      aria-hidden="true"
+    >
+      <g fill="none" stroke="#E0A526" stroke-width="1.2">
+        <circle cx="400" cy="400" r="120" />
+        <circle cx="400" cy="400" r="200" />
+        <circle cx="400" cy="400" r="300" />
+        <g>
+          {Array.from({ length: 24 }).map((_, i) => {
+            const angle = (i * 360) / 24;
+            return (
+              <line
+                x1="400"
+                y1="60"
+                x2="400"
+                y2="740"
+                transform={`rotate(${angle} 400 400)`}
+              />
+            );
+          })}
+        </g>
+      </g>
+    </svg>
+  </div>
+
+  <div class="relative z-10 max-w-5xl mx-auto text-center reveal">
+    <div class="inline-flex items-center gap-2 px-4 py-1.5 mb-6 rounded-full
+                  bg-white/60 backdrop-blur border border-butter-300/70
+                  text-butter-800 text-xs uppercase tracking-[0.3em] shadow-soft">
+      <span class="w-1.5 h-1.5 rounded-full bg-butter-500 animate-pulse-soft"></span>
+      21 de Septiembre · Día del Amor
+    </div>
+
+    <p class="font-script text-3xl md:text-4xl text-butter-700 mb-2 animate-fade-in">
+      Para ti, mi amor
+    </p>
+
+    <h1
+      class="font-serif text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold leading-[1.05] text-shadow-soft"
+    >
+      <span class="block">¡Feliz 21 de Septiembre,</span>
+      <span class="block shimmer-text">Mariela!</span>
+      <span class="block mt-2 text-5xl md:text-6xl">💛🌻</span>
+    </h1>
+
+    <p class="mt-7 max-w-2xl mx-auto text-lg md:text-xl text-butter-800/85 leading-relaxed">
+      Hoy te entrego todas mis
+      <span class="font-semibold text-butter-700">flores amarillas</span>,
+      Mariela — cada pétalo lleva un pedacito de lo que siento por ti.
+      Te las doy con todo mi corazón,
+      <br />
+      porque hay cosas que simplemente se dicen mejor con flores que con palabras.
+    </p>
+
+    <!-- Poetic card -->
+    <div class="mt-10 glass-card mx-auto max-w-3xl p-8 md:p-10 text-left md:text-center
+                animate-fade-up">
+      <svg
+        class="w-10 h-10 mx-auto mb-3 text-butter-500"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        aria-hidden="true"
+      >
+        <path d="M9.983 3v7.391c0 5.704-3.731 9.57-8.983 10.609l-.995-2.151c2.432-.917 3.995-3.638 3.995-5.849h-4v-10h9.983zm14.017 0v7.391c0 5.704-3.748 9.571-9 10.609l-.996-2.151c2.433-.917 3.996-3.638 3.996-5.849h-3.983v-10h9.983z"/>
+      </svg>
+
+      <p class="font-display italic text-xl md:text-2xl text-butter-900/90 leading-relaxed">
+        Mariela, no existen suficientes girasoles en el mundo para expresar
+        lo que siento por ti. Cada pétalo amarillo es una promesa, cada
+        suspiro de viento, un <em>"te quiero"</em> que viaja hasta tu corazón.
+        <br /><br />
+        Hoy y siempre, tú eres mi flor más bonita, mi estación favorita,
+        y el detalle que le da sentido a todos mis días.
+      </p>
+
+      <div class="mt-6 flex items-center justify-center gap-3 text-butter-700">
+        <span class="h-px w-12 bg-butter-500/60"></span>
+        <span class="font-script text-2xl">Con amor, Andy</span>
+        <span class="h-px w-12 bg-butter-500/60"></span>
+      </div>
+    </div>
+
+    <!-- CTAs -->
+    <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+      <SurpriseButton />
+      <a href="#galeria" class="btn-ghost">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+        Ver mis flores para ti
+      </a>
+    </div>
+
+    <!-- Floating floral icons -->
+    <div class="hidden md:block absolute -top-2 left-6 animate-float-slow opacity-80">
+      <svg width="60" height="60" viewBox="0 0 64 64">
+        <g transform="translate(32 32)">
+          <g fill="#FFD466" stroke="#A56B0E" stroke-width="1">
+            <ellipse cx="0" cy="-16" rx="6" ry="12" />
+            <ellipse cx="0" cy="16" rx="6" ry="12" />
+            <ellipse cx="-16" cy="0" rx="12" ry="6" />
+            <ellipse cx="16" cy="0" rx="12" ry="6" />
+          </g>
+          <circle r="6" fill="#6F4A09" />
+        </g>
+      </svg>
+    </div>
+    <div class="hidden md:block absolute bottom-10 right-10 animate-float-slow opacity-80" style="animation-delay: -3s">
+      <svg width="50" height="50" viewBox="0 0 64 64">
+        <g transform="translate(32 32)">
+          <g fill="#F5B028" stroke="#A56B0E" stroke-width="1">
+            <ellipse cx="0" cy="-14" rx="5" ry="10" />
+            <ellipse cx="0" cy="14" rx="5" ry="10" />
+            <ellipse cx="-14" cy="0" rx="10" ry="5" />
+            <ellipse cx="14" cy="0" rx="10" ry="5" />
+          </g>
+          <circle r="5" fill="#6F4A09" />
+        </g>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Scroll hint -->
+  <div class="absolute bottom-6 left-1/2 -translate-x-1/2 text-butter-700/70 text-xs uppercase tracking-[0.3em] flex flex-col items-center gap-1">
+    <span>Desliza</span>
+    <span class="w-px h-6 bg-butter-500 animate-pulse"></span>
+  </div>
+</section>

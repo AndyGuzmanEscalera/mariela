@@ -1,0 +1,157 @@
+---
+/**
+ * SurpriseButton
+ * ----------------
+ * Un botón dorado que, al hacer clic, lanza una espectacular
+ * lluvia de FLORES AMARILLAS desde TODOS los lados de la
+ * pantalla usando canvas-confetti.
+ *
+ * Para que las partículas se vean como FLORES reales (no círculos
+ * genéricos), usamos `shapeFromText()` con emojis de flores 🌻🌼🌺
+ * y un pétalo grande personalizado con `shapeFromPath()`.
+ *
+ * El efecto combina:
+ *   1) Explosión central grandiosa al inicio (250 partículas).
+ *   2) Lluvia continua (~3.5 s) desde 6 puntos de la pantalla
+ *      con mezcla de flores emoji + pétalos amarillos.
+ */
+---
+
+<button
+  id="surprise-btn"
+  type="button"
+  class="btn-primary group"
+  aria-label="Lanzar sorpresa de flores amarillas"
+>
+  <span class="text-xl group-hover:rotate-12 transition-transform duration-300">🎁</span>
+  <span class="relative">
+    <span data-default-text>¡Pulsa para tu sorpresa!</span>
+    <span data-alt-text class="hidden">¡Te quiero, Mariela! 💛</span>
+  </span>
+  <span class="text-xl group-hover:-rotate-12 transition-transform duration-300">🌻</span>
+</button>
+
+<script>
+  import confetti from 'canvas-confetti';
+
+  const btn = document.getElementById('surprise-btn');
+  const defaultText = btn?.querySelector('[data-default-text]');
+  const altText = btn?.querySelector('[data-alt-text]');
+
+  // ============================================================
+  // Formas de flores REALES (no círculos)
+  // ============================================================
+
+  // 1) Emojis de flores amarillas — `shapeFromText` renderiza el
+  //    glifo del emoji en un canvas y lo usa como partícula.
+  const sunflower = confetti.shapeFromText({ text: '🌻' });
+  const daisy     = confetti.shapeFromText({ text: '🌼' });
+  const blossom   = confetti.shapeFromText({ text: '🌸' });
+
+  // 2) Pétalo amarillo personalizado — forma alargada CLARAMENTE
+  //    distinta de un círculo. SVG path con curva Bézier doble.
+  const petal = confetti.shapeFromPath({
+    path: 'M50 2 C 92 30, 92 70, 50 98 C 8 70, 8 30, 50 2 Z',
+    matrix: [0.09, 0, 0, 0.09, 0, 0]   // escala para tamaño visible
+  });
+
+  // 3) Flor estilizada de 5 puntas — una "estrella" redondeada
+  //    que claramente parece una flor.
+  const flowerStar = confetti.shapeFromPath({
+    path: 'M50 4 C 60 4, 64 22, 64 22 C 80 22, 92 30, 78 50 C 92 70, 80 78, 64 78 C 64 78, 60 96, 50 96 C 40 96, 36 78, 36 78 C 20 78, 8 70, 22 50 C 8 30, 20 22, 36 22 C 36 22, 40 4, 50 4 Z',
+    matrix: [0.07, 0, 0, 0.07, 0, 0]
+  });
+
+  // Cast porque @types/canvas-confetti sólo conoce 'square'|'circle'|'star'
+  const flowerShapes = [sunflower, daisy, blossom, petal, flowerStar] as unknown as confetti.Shape[];
+
+  const butterColors = [
+    '#FFC93C',
+    '#FFD466',
+    '#FFE39E',
+    '#F5B028',
+    '#F8D26B',
+    '#FFEFC9',
+    '#E0A526',
+    '#FFC75A'
+  ];
+
+  // ============================================================
+  // El show
+  // ============================================================
+
+  const fireFlowerShower = () => {
+    const duration = 3500;
+    const end = Date.now() + duration;
+
+    // 1) Explosión central — la apertura del show
+    confetti({
+      particleCount: 260,
+      spread: 360,
+      startVelocity: 58,
+      ticks: 280,
+      gravity: 0.5,
+      decay: 0.94,
+      origin: { x: 0.5, y: 0.5 },
+      shapes: flowerShapes,
+      colors: butterColors,
+      scalar: 2.4
+    });
+
+    // 2) Lluvia continua desde 6 puntos — cada origen lanza
+    //    hacia el centro con un ángulo específico.
+    const tick = window.setInterval(() => {
+      const remaining = end - Date.now();
+      if (remaining <= 0) {
+        clearInterval(tick);
+        return;
+      }
+      const baseCount = Math.floor(120 * (remaining / duration));
+
+      const showers = [
+        // Bordes laterales (entran volando hacia el centro)
+        { origin: { x: -0.02, y: 0.30 + Math.random() * 0.40 }, angle: 72,  spread: 65 },
+        { origin: { x: 1.02,  y: 0.30 + Math.random() * 0.40 }, angle: 108, spread: 65 },
+        // Borde superior (caen)
+        { origin: { x: 0.15 + Math.random() * 0.30, y: -0.02 }, angle: 55,  spread: 55 },
+        { origin: { x: 0.55 + Math.random() * 0.30, y: -0.02 }, angle: 125, spread: 55 },
+        // Borde inferior (suben)
+        { origin: { x: 0.15 + Math.random() * 0.30, y: 1.02 },  angle: 305, spread: 50 },
+        { origin: { x: 0.55 + Math.random() * 0.30, y: 1.02 },  angle: 235, spread: 50 }
+      ];
+
+      showers.forEach((s) => {
+        confetti({
+          particleCount: Math.max(5, Math.floor(baseCount / showers.length)),
+          angle: s.angle,
+          spread: s.spread,
+          startVelocity: 40,
+          ticks: 240,
+          gravity: 0.7,
+          decay: 0.93,
+          origin: s.origin,
+          shapes: flowerShapes,
+          colors: butterColors,
+          scalar: 2.0,
+          drift: 0.25
+        });
+      });
+    }, 200);
+  };
+
+  const toggleText = () => {
+    if (!defaultText || !altText) return;
+    defaultText.classList.toggle('hidden');
+    altText.classList.toggle('hidden');
+  };
+
+  btn?.addEventListener('click', () => {
+    btn.classList.add('animate-pulse-soft');
+    fireFlowerShower();
+    toggleText();
+    window.setTimeout(() => {
+      btn.classList.remove('animate-pulse-soft');
+      toggleText();
+    }, 3700);
+  });
+</script>

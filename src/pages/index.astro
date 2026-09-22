@@ -1,0 +1,24 @@
+---
+import Layout from '../layouts/Layout.astro';
+import FlowerRain from '../components/FlowerRain.astro';
+import Hero from '../components/Hero.astro';
+import Gallery from '../components/Gallery.astro';
+import MysteryEvent from '../components/MysteryEvent.astro';
+import ClosingSection from '../components/ClosingSection.astro';
+---
+
+<Layout
+  title="Feliz 21 de Septiembre, Mariela 💛🌻"
+  description="Un detalle digital lleno de flores amarillas, mensajes de amor y promesas para Mariela en este 21 de Septiembre."
+>
+  <FlowerRain />
+
+  <div class="relative z-10">
+    <main>
+      <Hero />
+      <Gallery />
+      <MysteryEvent />
+      <ClosingSection />
+    </main>
+  </div>
+</Layout>

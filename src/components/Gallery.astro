@@ -1,0 +1,271 @@
+---
+/**
+ * Gallery
+ * --------
+ * Una rejilla de "flip cards" con flores amarillas. Cada tarjeta
+ * muestra una flor SVG al frente y, al hacer hover o clic,
+ * gira para revelar un mensaje romántico dedicado a Mariela.
+ *
+ * El contenido del array `cards` es fácilmente editable.
+ */
+
+interface Card {
+  id: string;
+  title: string;
+  flower: 'sunflower' | 'rose' | 'tulip' | 'daisy' | 'bouquet' | 'bloom';
+  message: string;
+  emoji: string;
+}
+
+const cards: Card[] = [
+  {
+    id: 'girasol',
+    title: 'Mi Girasol',
+    flower: 'sunflower',
+    emoji: '🌻',
+    message:
+      'Eres mi girasol particular, Mariela: siempre me miras con esa luz que derrite cualquier tormenta. Contigo aprendí que el amor más bonito es el que siempre busca el sol, sin importar las nubes.'
+  },
+  {
+    id: 'rosa',
+    title: 'Rosa Amarilla',
+    flower: 'rose',
+    emoji: '🌹',
+    message:
+      'Una rosa amarilla significa "amistad y cariño profundo". Tú eres mi mejor amiga, mi confidente, mi lugar seguro. Gracias por regalarme tu tiempo y tu corazón cada día.'
+  },
+  {
+    id: 'tulipan',
+    title: 'Tulipán de Sol',
+    flower: 'tulip',
+    emoji: '🌷',
+    message:
+      'Como un tulipán que se abre con la primavera, tú haces que mi corazón florezca. Cada detalle tuyo —tu risa, tu voz, tu mirada— convierte lo ordinario en algo mágico.'
+  },
+  {
+    id: 'margarita',
+    title: 'Margarita Dorada',
+    flower: 'daisy',
+    emoji: '🌼',
+    message:
+      'Te quiero con la dulzura de las margaritas: simple, sincera y eterna. Si me preguntan qué quiero para siempre, mi respuesta tiene tu nombre y tu sonrisa.'
+  },
+  {
+    id: 'ramo',
+    title: 'Ramo de Promesas',
+    flower: 'bouquet',
+    emoji: '💐',
+    message:
+      'Este ramo virtual es un pacto: prometo cuidarte, escucharte, reír contigo y ser tu refugio. Hoy, mañana y en cada 21 de septiembre que venga.'
+  },
+  {
+    id: 'flor',
+    title: 'Flor Eterna',
+    flower: 'bloom',
+    emoji: '🌸',
+    message:
+      'Mariela, si las flores amarillas representan un amor que no se marchita, entonces el mío por ti es eterno. Gracias por existir y por hacerme tan feliz.'
+  }
+];
+---
+
+<section
+  id="galeria"
+  class="relative py-24 md:py-32 px-5"
+>
+  <div class="max-w-6xl mx-auto reveal">
+    <div class="text-center mb-14">
+      <p class="font-script text-3xl text-butter-700 mb-2">Un jardín sólo para ti</p>
+      <h2 class="section-title">Galería de Flores Amarillas</h2>
+      <p class="section-subtitle">
+        Pasa el cursor o toca cada flor para descubrir el mensaje que escondí
+        con todo mi cariño. 🌼
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+      {cards.map((card, idx) => (
+        <article
+          class="flip-card group h-80 cursor-pointer outline-none reveal"
+          style={`transition-delay: ${idx * 80}ms`}
+          tabindex="0"
+          aria-label={`Tarjeta: ${card.title}. Toca para revelar el mensaje.`}
+          data-flower-card
+        >
+          <div class="flip-card-inner">
+            <!-- FRONT -->
+            <div class="flip-card-face bg-gradient-to-br from-butter-100 via-cream-100 to-butter-200
+                        border border-butter-300/70 shadow-soft
+                        flex flex-col items-center justify-center p-6 text-center">
+              <span class="stamp mb-4">Flor #{idx + 1}</span>
+
+              <div class="w-32 h-32 flex items-center justify-center mb-4 transition-transform duration-500 group-hover:scale-110">
+                {card.flower === 'sunflower' && (
+                  <svg viewBox="0 0 100 100" class="w-full h-full">
+                    <g transform="translate(50 50)">
+                      <g fill="#FFC93C" stroke="#A56B0E" stroke-width="1.4">
+                        {Array.from({ length: 12 }).map((_, i) => {
+                          const a = (i * 30 * Math.PI) / 180;
+                          const x1 = Math.cos(a) * 14;
+                          const y1 = Math.sin(a) * 14;
+                          const x2 = Math.cos(a) * 34;
+                          const y2 = Math.sin(a) * 34;
+                          return (
+                            <ellipse
+                              cx={(x1 + x2) / 2}
+                              cy={(y1 + y2) / 2}
+                              rx="11"
+                              ry="6"
+                              transform={`rotate(${i * 30} ${(x1 + x2) / 2} ${(y1 + y2) / 2})`}
+                            />
+                          );
+                        })}
+                      </g>
+                      <circle r="16" fill="#6F4A09" />
+                      <circle r="16" fill="url(#dots)" />
+                      <defs>
+                        <pattern id="dots" width="3" height="3" patternUnits="userSpaceOnUse">
+                          <circle cx="1.5" cy="1.5" r="0.7" fill="#3a2705" />
+                        </pattern>
+                      </defs>
+                    </g>
+                  </svg>
+                )}
+
+                {card.flower === 'rose' && (
+                  <svg viewBox="0 0 100 100" class="w-full h-full">
+                    <g transform="translate(50 50)">
+                      <g fill="#F5B028" stroke="#A56B0E" stroke-width="1.2">
+                        <circle r="32" />
+                        <circle r="22" fill="#FFD466" />
+                        <circle r="13" fill="#FFE39E" />
+                        <circle r="6" fill="#A56B0E" />
+                        <path d="M-32 0 Q-50 -8 -56 0 Q-50 8 -32 0Z" fill="#7CB342" />
+                        <path d="M-30 14 Q-46 22 -50 12 Q-42 6 -30 14Z" fill="#8BC34A" />
+                      </g>
+                    </g>
+                  </svg>
+                )}
+
+                {card.flower === 'tulip' && (
+                  <svg viewBox="0 0 100 100" class="w-full h-full">
+                    <g transform="translate(50 55)">
+                      <path d="M-18 0 Q-22 -28 0 -34 Q22 -28 18 0 Z" fill="#FFD466" stroke="#A56B0E" stroke-width="1.2" />
+                      <path d="M-10 -2 Q-14 -22 0 -28 Q4 -16 -6 -2 Z" fill="#FFC93C" stroke="#A56B0E" stroke-width="1" />
+                      <path d="M10 -2 Q14 -22 0 -28 Q-4 -16 6 -2 Z" fill="#FFC93C" stroke="#A56B0E" stroke-width="1" />
+                      <path d="M0 4 Q-4 30 0 36 Q4 30 0 4 Z" fill="#7CB342" stroke="#558B2F" stroke-width="1" />
+                      <path d="M-2 12 Q-22 18 -22 24 Q-10 22 -2 16 Z" fill="#8BC34A" stroke="#558B2F" stroke-width="1" />
+                    </g>
+                  </svg>
+                )}
+
+                {card.flower === 'daisy' && (
+                  <svg viewBox="0 0 100 100" class="w-full h-full">
+                    <g transform="translate(50 50)">
+                      <g fill="#FFE39E" stroke="#A56B0E" stroke-width="1.2">
+                        {Array.from({ length: 8 }).map((_, i) => (
+                          <ellipse
+                            cx="0"
+                            cy="-22"
+                            rx="8"
+                            ry="14"
+                            transform={`rotate(${i * 45} 0 0)`}
+                          />
+                        ))}
+                      </g>
+                      <circle r="9" fill="#E0A526" stroke="#A56B0E" stroke-width="1.2" />
+                    </g>
+                  </svg>
+                )}
+
+                {card.flower === 'bouquet' && (
+                  <svg viewBox="0 0 100 100" class="w-full h-full">
+                    <g transform="translate(50 50)">
+                      <g stroke="#558B2F" stroke-width="1.4" fill="none">
+                        <path d="M-2 16 Q-10 30 -16 36" />
+                        <path d="M2 18 Q10 30 14 36" />
+                        <path d="M0 12 Q0 30 0 38" />
+                      </g>
+                      <g>
+                        <g transform="translate(-14 -8)">
+                          <circle r="10" fill="#FFD466" stroke="#A56B0E" />
+                        </g>
+                        <g transform="translate(0 -14)">
+                          <circle r="11" fill="#FFC93C" stroke="#A56B0E" />
+                        </g>
+                        <g transform="translate(14 -8)">
+                          <circle r="10" fill="#F5B028" stroke="#A56B0E" />
+                        </g>
+                      </g>
+                      <path d="M-22 30 Q0 22 22 30 L18 42 Q0 36 -18 42 Z" fill="#D7CCC8" stroke="#8D6E63" stroke-width="1.2" />
+                    </g>
+                  </svg>
+                )}
+
+                {card.flower === 'bloom' && (
+                  <svg viewBox="0 0 100 100" class="w-full h-full">
+                    <g transform="translate(50 50)">
+                      <g fill="#FFE39E" stroke="#A56B0E" stroke-width="1.2">
+                        {Array.from({ length: 6 }).map((_, i) => (
+                          <ellipse
+                            cx="0"
+                            cy="-20"
+                            rx="10"
+                            ry="16"
+                            transform={`rotate(${i * 60} 0 0)`}
+                          />
+                        ))}
+                      </g>
+                      <circle r="9" fill="#FFC93C" stroke="#A56B0E" stroke-width="1.2" />
+                      <circle r="3" fill="#6F4A09" />
+                    </g>
+                  </svg>
+                )}
+              </div>
+
+              <h3 class="font-serif text-2xl font-semibold text-butter-800">
+                {card.title}
+              </h3>
+              <p class="text-sm text-butter-700/70 mt-2 flex items-center gap-1">
+                <span class="inline-block w-1.5 h-1.5 rounded-full bg-butter-500 animate-pulse"></span>
+                Toca para descubrir
+              </p>
+            </div>
+
+            <!-- BACK -->
+            <div class="flip-card-face flip-card-back
+                        bg-gradient-to-br from-butter-500 via-sunset-honey to-sunset-gold
+                        border border-butter-700/40 shadow-soft
+                        flex flex-col items-center justify-center p-7 text-center text-white">
+              <div class="text-4xl mb-3">{card.emoji}</div>
+              <h3 class="font-serif italic text-2xl mb-3 text-white/95">
+                Para ti, Mariela
+              </h3>
+              <p class="font-display text-lg leading-relaxed text-butter-50/95">
+                "{card.message}"
+              </p>
+              <div class="mt-5 flex items-center gap-2 text-butter-50/80 text-xs uppercase tracking-[0.3em]">
+                <span class="h-px w-8 bg-white/60"></span>
+                <span>Con amor</span>
+                <span class="h-px w-8 bg-white/60"></span>
+              </div>
+            </div>
+          </div>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>
+
+<script>
+  // Click-to-toggle behaviour for touch devices (hover already handled by CSS)
+  document.querySelectorAll<HTMLElement>('[data-flower-card]').forEach((card) => {
+    card.addEventListener('click', () => card.classList.toggle('is-flipped'));
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        card.classList.toggle('is-flipped');
+      }
+    });
+  });
+</script>

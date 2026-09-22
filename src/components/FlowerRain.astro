@@ -1,0 +1,168 @@
+---
+/**
+ * FlowerRain
+ * -------------------------------------------------------------
+ * A fullscreen canvas that gently rains yellow petals / small
+ * flowers. Performance-friendly: uses requestAnimationFrame,
+ * honors `prefers-reduced-motion`, and adapts DPR.
+ */
+---
+
+<canvas
+  id="flower-rain"
+  class="pointer-events-none fixed inset-0 z-0"
+  aria-hidden="true"
+></canvas>
+
+<script>
+  type Petal = {
+    x: number;
+    y: number;
+    size: number;
+    speedY: number;
+    speedX: number;
+    rotation: number;
+    rotationSpeed: number;
+    sway: number;
+    swayOffset: number;
+    color: string;
+    shape: 'petal' | 'mini' | 'dot';
+    opacity: number;
+  };
+
+  const canvas = document.getElementById('flower-rain') as HTMLCanvasElement | null;
+  if (!canvas) {
+    // Component not rendered
+  } else {
+    const ctx = canvas.getContext('2d')!;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    const COLORS = [
+      '#FFE39E',
+      '#FFD466',
+      '#FFC93C',
+      '#F5B028',
+      '#F8D26B',
+      '#FFEFC9',
+      '#FFC75A'
+    ];
+
+    let width = 0;
+    let height = 0;
+    let petals: Petal[] = [];
+
+    const resize = () => {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const target = Math.min(80, Math.floor((width * height) / 22000));
+      petals = Array.from({ length: target }, () => makePetal(true));
+    };
+
+    const rand = (min: number, max: number) => Math.random() * (max - min) + min;
+
+    const makePetal = (anywhere = false): Petal => {
+      const shapes: Petal['shape'][] = ['petal', 'mini', 'petal', 'mini', 'dot', 'petal'];
+      return {
+        x: rand(0, width),
+        y: anywhere ? rand(-height, height) : rand(-120, -20),
+        size: rand(8, 22),
+        speedY: rand(0.4, 1.4),
+        speedX: rand(-0.4, 0.4),
+        rotation: rand(0, Math.PI * 2),
+        rotationSpeed: rand(-0.012, 0.012),
+        sway: rand(0.4, 1.2),
+        swayOffset: rand(0, Math.PI * 2),
+        color: COLORS[Math.floor(Math.random() * COLORS.length)],
+        shape: shapes[Math.floor(Math.random() * shapes.length)],
+        opacity: rand(0.55, 0.95)
+      };
+    };
+
+    const drawPetal = (p: Petal) => {
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rotation);
+      ctx.globalAlpha = p.opacity;
+      ctx.fillStyle = p.color;
+      ctx.strokeStyle = 'rgba(169, 109, 13, 0.25)';
+      ctx.lineWidth = 0.6;
+
+      if (p.shape === 'petal') {
+        // Teardrop petal
+        ctx.beginPath();
+        ctx.moveTo(0, -p.size);
+        ctx.bezierCurveTo(
+          p.size * 0.7, -p.size * 0.6,
+          p.size * 0.7, p.size * 0.6,
+          0, p.size
+        );
+        ctx.bezierCurveTo(
+          -p.size * 0.7, p.size * 0.6,
+          -p.size * 0.7, -p.size * 0.6,
+          0, -p.size
+        );
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      } else if (p.shape === 'mini') {
+        // 5-petal mini sunflower-ish
+        const petalsCount = 5;
+        for (let i = 0; i < petalsCount; i++) {
+          const angle = (Math.PI * 2 * i) / petalsCount;
+          ctx.save();
+          ctx.rotate(angle);
+          ctx.beginPath();
+          ctx.ellipse(0, -p.size * 0.55, p.size * 0.22, p.size * 0.5, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+          ctx.restore();
+        }
+        ctx.beginPath();
+        ctx.arc(0, 0, p.size * 0.28, 0, Math.PI * 2);
+        ctx.fillStyle = '#6F4A09';
+        ctx.fill();
+      } else {
+        ctx.beginPath();
+        ctx.arc(0, 0, p.size * 0.4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+    };
+
+    let last = performance.now();
+    const tick = (now: number) => {
+      const dt = Math.min(48, now - last);
+      last = now;
+      ctx.clearRect(0, 0, width, height);
+
+      const speedFactor = reduceMotion ? 0.15 : dt / 16;
+
+      petals.forEach((p) => {
+        p.y += p.speedY * speedFactor;
+        p.x += Math.sin((now / 1000) * p.sway + p.swayOffset) * 0.35 + p.speedX * speedFactor;
+        p.rotation += p.rotationSpeed * speedFactor;
+
+        if (p.y - p.size > height + 20) {
+          Object.assign(p, makePetal(false));
+        }
+        if (p.x < -40) p.x = width + 40;
+        if (p.x > width + 40) p.x = -40;
+
+        drawPetal(p);
+      });
+
+      requestAnimationFrame(tick);
+    };
+
+    resize();
+    window.addEventListener('resize', resize);
+    requestAnimationFrame(tick);
+  }
+</script>

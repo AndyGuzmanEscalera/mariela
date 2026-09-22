@@ -1,0 +1,277 @@
+---
+import Layout from '../layouts/Layout.astro';
+import QRCode from 'qrcode';
+
+const SITE_URL = 'https://andyguzmanescalera.github.io/mariela/';
+
+// Generamos el QR en SVG en build-time → se imprime con calidad perfecta
+// (escala sin perder nitidez) y en colores del tema.
+const qrSvg = await QRCode.toString(SITE_URL, {
+  type: 'svg',
+  margin: 1,
+  width: 480,
+  errorCorrectionLevel: 'H',
+  color: {
+    dark: '#6F4A09',
+    light: '#FFF8E8'
+  }
+});
+---
+
+<Layout
+  title="Tarjeta Imprimible 💛🌻"
+  description="Tarjeta para imprimir con QR — un detalle físico para Mariela."
+>
+  <main class="min-h-screen flex flex-col items-center justify-center py-10 px-4 bg-parchment">
+
+    <!-- Controles (no se imprimen) -->
+    <div class="no-print w-full max-w-2xl flex flex-wrap items-center justify-between gap-3 mb-8">
+      <a href={import.meta.env.BASE_URL} class="btn-ghost">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+        </svg>
+        Volver a la página
+      </a>
+      <button onclick="window.print()" class="btn-primary">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M6 9V3h12v6M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v7H6z" />
+        </svg>
+        Imprimir / Guardar como PDF
+      </button>
+    </div>
+
+    <!-- ============ TARJETA IMPRIMIBLE ============ -->
+    <article class="print-card">
+
+      <!-- Decoraciones esquinas -->
+      <svg class="corner corner-tl" viewBox="0 0 100 100" aria-hidden="true">
+        <g transform="translate(50 50)" fill="#FFD466" stroke="#A56B0E" stroke-width="1.2">
+          <ellipse cx="0" cy="-18" rx="7" ry="13" />
+          <ellipse cx="0" cy="18" rx="7" ry="13" />
+          <ellipse cx="-18" cy="0" rx="13" ry="7" />
+          <ellipse cx="18" cy="0" rx="13" ry="7" />
+          <circle r="6" fill="#6F4A09" />
+        </g>
+      </svg>
+      <svg class="corner corner-br" viewBox="0 0 100 100" aria-hidden="true">
+        <g transform="translate(50 50)" fill="#FFE39E" stroke="#A56B0E" stroke-width="1.2">
+          <ellipse cx="0" cy="-15" rx="6" ry="11" />
+          <ellipse cx="0" cy="15" rx="6" ry="11" />
+          <ellipse cx="-15" cy="0" rx="11" ry="6" />
+          <ellipse cx="15" cy="0" rx="11" ry="6" />
+          <circle r="5" fill="#6F4A09" />
+        </g>
+      </svg>
+
+      <!-- Sello superior -->
+      <div class="card-stamp">
+        <span class="stamp">21 · Septiembre · 2026</span>
+      </div>
+
+      <!-- Título -->
+      <div class="card-head">
+        <p class="font-script text-3xl text-butter-700">Para ti</p>
+        <h1 class="card-title">Mariela</h1>
+        <p class="card-subtitle">Feliz 21 de Septiembre 💛🌻</p>
+      </div>
+
+      <!-- Mensaje -->
+      <p class="card-message">
+        Cada flor amarilla es un pedacito de lo que siento
+        por ti. Escanea el código para descubrir más detalles —
+        un detalle hecho con todo mi corazón.
+      </p>
+
+      <!-- Separador -->
+      <div class="card-divider">
+        <span class="line"></span>
+        <span class="dot">🌼</span>
+        <span class="line"></span>
+      </div>
+
+      <!-- QR -->
+      <div class="card-qr">
+        <div class="qr-frame" set:html={qrSvg}></div>
+        <p class="qr-caption">Escanea con tu cámara</p>
+        <code class="qr-url">andyguzmanescalera.github.io/mariela</code>
+      </div>
+
+      <!-- Pie -->
+      <div class="card-footer">
+        <span class="h-px w-12 bg-butter-500/60"></span>
+        <span class="font-script text-2xl text-butter-700">Con amor, Andy</span>
+        <span class="h-px w-12 bg-butter-500/60"></span>
+      </div>
+    </article>
+
+    <!-- Tip de impresión -->
+    <p class="no-print mt-6 text-sm text-butter-700/80 text-center max-w-md leading-relaxed">
+      💡 Tip: al imprimir, elige <strong>"Ajustar a la página"</strong> o
+      <strong>"Tamaño real"</strong> según tu impresora. También puedes
+      <strong>"Guardar como PDF"</strong> para enviárselo digitalmente.
+    </p>
+  </main>
+</Layout>
+
+<style>
+  /* ============ PRINT PAGE SETUP ============ */
+  @page {
+    size: A5 portrait;
+    margin: 8mm;
+  }
+
+  @media print {
+    body {
+      background: #ffffff !important;
+    }
+    .no-print { display: none !important; }
+    .print-card {
+      box-shadow: none !important;
+      page-break-inside: avoid;
+    }
+  }
+
+  /* ============ CARD ============ */
+  .print-card {
+    position: relative;
+    width: 100%;
+    max-width: 580px;
+    aspect-ratio: 5 / 7;
+    padding: clamp(24px, 4vw, 48px);
+    background: linear-gradient(135deg, #FFFCF2 0%, #FFF8E8 50%, #FFEFC9 100%);
+    border: 2px solid #E0A526;
+    border-radius: 24px;
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.6) inset,
+      0 20px 50px -15px rgba(169, 109, 13, 0.35);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    color: #6F4A09;
+  }
+
+  /* esquinas decorativas */
+  .corner {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    opacity: 0.55;
+  }
+  .corner-tl { top: -10px; left: -10px; transform: rotate(-15deg); }
+  .corner-br { bottom: -10px; right: -10px; transform: rotate(15deg); }
+
+  /* sello superior */
+  .card-stamp { margin-bottom: 18px; }
+
+  /* cabecera */
+  .card-head { margin-bottom: 18px; }
+
+  .card-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: clamp(48px, 8vw, 76px);
+    font-weight: 800;
+    line-height: 1;
+    margin: 6px 0 8px;
+    background: linear-gradient(120deg, #D99114 0%, #FFD466 50%, #D99114 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .card-subtitle {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-style: italic;
+    font-size: clamp(14px, 2.4vw, 18px);
+    color: #A56B0E;
+  }
+
+  /* mensaje */
+  .card-message {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-style: italic;
+    font-size: clamp(15px, 2.6vw, 19px);
+    line-height: 1.55;
+    color: #6F4A09;
+    max-width: 420px;
+    margin: 0 auto;
+  }
+
+  /* separador */
+  .card-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin: 22px 0 18px;
+    width: 100%;
+    max-width: 380px;
+  }
+  .card-divider .line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #E0A526, transparent);
+  }
+  .card-divider .dot { font-size: 18px; }
+
+  /* QR */
+  .card-qr {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+
+  .qr-frame {
+    background: #FFF8E8;
+    padding: 14px;
+    border-radius: 18px;
+    border: 1.5px dashed #E0A526;
+    box-shadow: 0 6px 20px -8px rgba(169, 109, 13, 0.4);
+    line-height: 0;
+  }
+  .qr-frame :global(svg) {
+    display: block;
+    width: clamp(150px, 32vw, 200px);
+    height: auto;
+  }
+
+  .qr-caption {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.25em;
+    color: #A56B0E;
+    margin: 0;
+  }
+
+  .qr-url {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 11px;
+    color: #6F4A09;
+    background: rgba(255, 201, 60, 0.18);
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(224, 165, 38, 0.4);
+  }
+
+  /* pie */
+  .card-footer {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding-top: 12px;
+  }
+
+  /* asegurar que el QR no se rompa en la impresión */
+  @media print {
+    .qr-frame { box-shadow: none; }
+  }
+</style>
