@@ -1,0 +1,853 @@
+---
+/**
+ * /cumple — Semana de cumpleaños de Mariela
+ * ----------------------------------------------------
+ * Del Martes 29 Sept al Domingo 4 Oct (su cumpleaños).
+ * Cada día se desbloquea una carta nueva a las 18:00 hs.
+ *
+ * ⚠️  PROTOTIPO: las cartas de Miércoles a Domingo tienen
+ *     texto de placeholder. Edita el array `days` abajo
+ *     para personalizarlas con tu mensaje.
+ */
+
+// Array con los 6 días. Edita libremente los textos.
+const days = [
+  {
+    id: 'martes',
+    number: 1,
+    date: '2026-09-29',
+    dayName: 'Martes',
+    dateLabel: '29 de Septiembre',
+    title: 'Mujer genial y fuerte',
+    frontMessage: 'Hoy quiero recordarte algo: eres una mujer genial y muy fuerte. 💛',
+    requiresPassword: true,
+    password: '26',
+    passwordHint: '¿Cuántos años tenías cuando nos conocimos?',
+    insideTitle: 'Aquel perfume que no olvido',
+    insideMessage:
+      'Cuando te conocí en 2023, llevabas un perfume que nunca voy a olvidar. Era algo muy bonito y sin igual, algo que me marcó desde el primer día. Me tomó mucho tiempo encontrar ese perfume — lo busqué con mucho desvelo — pero al fin lo hallé, y siempre, siempre lo voy a asociar contigo. Espero que te haya gustado.',
+    insideEmoji: '🌸'
+  },
+  {
+    id: 'miercoles',
+    number: 2,
+    date: '2026-09-30',
+    dayName: 'Miércoles',
+    dateLabel: '30 de Septiembre',
+    title: 'Algo viene mañana...',
+    frontMessage: 'Pronto descubrirás algo nuevo 💛',
+    requiresPassword: false,
+    insideTitle: 'Mensaje del día 2',
+    insideMessage:
+      '⚠️ EDITAR: Aquí va tu mensaje personalizado para el miércoles 30 de septiembre. Reemplaza este texto en src/pages/cumple.astro (array days, objeto miercoles).',
+    insideEmoji: '✨'
+  },
+  {
+    id: 'jueves',
+    number: 3,
+    date: '2026-10-01',
+    dayName: 'Jueves',
+    dateLabel: '1 de Octubre',
+    title: 'Algo viene mañana...',
+    frontMessage: 'Pronto descubrirás algo nuevo 💛',
+    requiresPassword: false,
+    insideTitle: 'Mensaje del día 3',
+    insideMessage:
+      '⚠️ EDITAR: Aquí va tu mensaje personalizado para el jueves 1 de octubre. Reemplaza este texto en src/pages/cumple.astro (array days, objeto jueves).',
+    insideEmoji: '🌷'
+  },
+  {
+    id: 'viernes',
+    number: 4,
+    date: '2026-10-02',
+    dayName: 'Viernes',
+    dateLabel: '2 de Octubre',
+    title: 'Algo viene mañana...',
+    frontMessage: 'Pronto descubrirás algo nuevo 💛',
+    requiresPassword: false,
+    insideTitle: 'Mensaje del día 4',
+    insideMessage:
+      '⚠️ EDITAR: Aquí va tu mensaje personalizado para el viernes 2 de octubre. Reemplaza este texto en src/pages/cumple.astro (array days, objeto viernes).',
+    insideEmoji: '💫'
+  },
+  {
+    id: 'sabado',
+    number: 5,
+    date: '2026-10-03',
+    dayName: 'Sábado',
+    dateLabel: '3 de Octubre',
+    title: 'Mañana es tu día...',
+    frontMessage: 'Mañana es un día muy especial. 🌻',
+    requiresPassword: false,
+    insideTitle: 'Mensaje del día 5',
+    insideMessage:
+      '⚠️ EDITAR: Aquí va tu mensaje personalizado para el sábado 3 de octubre. Reemplaza este texto en src/pages/cumple.astro (array days, objeto sabado).',
+    insideEmoji: '🎁'
+  },
+  {
+    id: 'domingo',
+    number: 6,
+    date: '2026-10-04',
+    dayName: 'Domingo · Tu cumpleaños',
+    dateLabel: '4 de Octubre',
+    title: 'Feliz cumpleaños, Mariela',
+    frontMessage: 'Hoy es tu día, mi amor. 🌻💛',
+    requiresPassword: false,
+    insideTitle: 'Feliz cumpleaños, Mariela',
+    insideMessage:
+      '⚠️ EDITAR: Aquí va tu mensaje personalizado para el domingo 4 de octubre (su cumpleaños). Reemplaza este texto en src/pages/cumple.astro (array days, objeto domingo).',
+    insideEmoji: '🎂'
+  }
+];
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5" />
+    <meta name="theme-color" content="#5C3A1E" />
+    <title>Para Mariela · 4 de Octubre 💛</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600;700&family=Great+Vibes&family=Dancing+Script:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+
+  <body class="cumple-body">
+    <!-- Fondo estrellado -->
+    <div class="stars" aria-hidden="true">
+      {Array.from({ length: 60 }).map((_, i) => (
+        <span
+          class="star"
+          style={`top:${Math.random() * 100}%; left:${Math.random() * 100}%; animation-delay:${Math.random() * 4}s;`}
+        ></span>
+      ))}
+    </div>
+
+    <main class="relative z-10 max-w-6xl mx-auto px-5 py-16 md:py-24">
+
+      <!-- ============ HEADER ============ -->
+      <header class="text-center mb-16">
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full
+                    border border-amber-200/30 text-amber-100/90
+                    text-xs uppercase tracking-[0.35em] mb-6 backdrop-blur-sm">
+          <span class="w-1.5 h-1.5 rounded-full bg-amber-300 animate-pulse"></span>
+          6 días · 6 cartas · 1 cumpleaños
+        </div>
+
+        <p class="font-script text-4xl md:text-5xl text-amber-200 mb-2">
+          Para Mariela
+        </p>
+
+        <h1 class="font-serif text-5xl md:text-7xl lg:text-8xl font-bold text-amber-50 leading-[1.05] text-shadow-soft">
+          Tu semana <span class="italic text-amber-200">mágica</span>
+        </h1>
+
+        <p class="mt-6 max-w-2xl mx-auto text-amber-100/80 text-lg md:text-xl leading-relaxed font-display italic">
+          Cada día, a las 6:00 PM, una nueva carta se abrirá para ti.
+          Seis días de detalles pensados exclusivamente para vos,
+          hasta llegar a tu cumpleaños.
+        </p>
+
+        <!-- Línea dorada decorativa -->
+        <div class="mt-8 flex items-center justify-center gap-3">
+          <span class="h-px w-16 bg-amber-300/40"></span>
+          <span class="font-script text-2xl text-amber-200">del 29 Sept al 4 Oct</span>
+          <span class="h-px w-16 bg-amber-300/40"></span>
+        </div>
+      </header>
+
+      <!-- ============ GRID DE CARTAS ============ -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+
+        {days.map((day) => (
+          <article
+            class="letter-card group"
+            data-day-id={day.id}
+            data-day-date={day.date}
+            data-day-number={day.number}
+            data-day-name={day.dayName}
+            data-day-label={day.dateLabel}
+            data-day-title={day.title}
+            data-day-front={day.frontMessage}
+            data-day-inside-title={day.insideTitle}
+            data-day-inside-message={day.insideMessage}
+            data-day-inside-emoji={day.insideEmoji}
+            data-day-requires-password={String(day.requiresPassword)}
+            data-day-password={day.password ?? ''}
+            data-day-password-hint={day.passwordHint ?? ''}
+          >
+            <!-- Sobre (parte de atrás) -->
+            <div class="envelope envelope-back">
+              <div class="envelope-flap"></div>
+              <span class="envelope-day">Día {day.number}</span>
+              <span class="envelope-date">{day.dayName}</span>
+              <span class="envelope-datelabel">{day.dateLabel}</span>
+            </div>
+
+            <!-- Sello de cera -->
+            <div class="wax-seal" aria-hidden="true">
+              <span class="wax-number">{day.number}</span>
+            </div>
+
+            <!-- Candado -->
+            <div class="padlock" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="5" y="11" width="14" height="10" rx="2" />
+                <path d="M8 11V7a4 4 0 1 1 8 0v4" />
+              </svg>
+            </div>
+
+            <!-- Estado -->
+            <div class="status-badge"></div>
+          </article>
+        ))}
+
+      </div>
+
+      <!-- ============ FOOTER ============ -->
+      <footer class="mt-20 text-center text-amber-100/60 text-sm">
+        <p class="font-display italic">
+          Hecho con 💛 sólo para vos, Mariela — del 29 de septiembre al 4 de octubre.
+        </p>
+      </footer>
+    </main>
+
+    <!-- ============ MODAL CONTRASEÑA ============ -->
+    <div
+      id="password-modal"
+      class="modal-overlay fixed inset-0 z-[60] hidden items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="password-title"
+    >
+      <div class="modal-card">
+        <div class="modal-strip">
+          <span class="modal-strip-text">
+            <svg class="w-4 h-4 inline -mt-0.5 mr-1.5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2a5 5 0 00-5 5v3H6a2 2 0 00-2 2v9a2 2 0 002 2h12a2 2 0 002-2v-9a2 2 0 00-2-2h-1V7a5 5 0 00-5-5zm-3 8V7a3 3 0 116 0v3H9z"/>
+            </svg>
+            <span id="password-strip-label">Carta protegida</span>
+          </span>
+          <button id="close-password" type="button" class="modal-close" aria-label="Cerrar">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M6 18L18 6"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="modal-body text-center">
+          <div class="modal-icon-wrap">
+            <span class="text-5xl">🔒</span>
+          </div>
+
+          <h3 id="password-title" class="modal-title">Una pregunta primero</h3>
+          <p id="password-hint" class="modal-subtitle"></p>
+
+          <form id="password-form" class="mt-6 flex flex-col items-center gap-4">
+            <input
+              id="password-input"
+              type="text"
+              inputmode="numeric"
+              autocomplete="off"
+              placeholder="Tu respuesta..."
+              class="password-input"
+            />
+            <button type="submit" class="btn-open">
+              Abrir mi carta
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 12l14 0M13 5l7 7-7 7"/>
+              </svg>
+            </button>
+            <p id="password-error" class="text-rose-300 text-sm hidden">
+              Mmm, no es esa. Inténtalo otra vez 💛
+            </p>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ MODAL CARTA REVELADA ============ -->
+    <div
+      id="reveal-modal"
+      class="modal-overlay fixed inset-0 z-[60] hidden items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="reveal-title"
+    >
+      <div class="modal-card max-w-2xl">
+        <div class="modal-strip">
+          <span class="modal-strip-text">
+            <span id="reveal-strip-label"></span>
+          </span>
+          <button id="close-reveal" type="button" class="modal-close" aria-label="Cerrar">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M6 18L18 6"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="modal-body p-8 md:p-10">
+          <div class="text-center mb-6">
+            <span id="reveal-emoji" class="text-6xl block mb-4"></span>
+            <h3 id="reveal-title" class="modal-title"></h3>
+            <div class="mt-3 flex items-center justify-center gap-3">
+              <span class="h-px w-12 bg-amber-300/40"></span>
+              <span id="reveal-day-label" class="font-script text-xl text-amber-200"></span>
+              <span class="h-px w-12 bg-amber-300/40"></span>
+            </div>
+          </div>
+
+          <p id="reveal-message" class="letter-content"></p>
+
+          <div class="mt-8 text-center">
+            <span class="font-script text-2xl text-amber-200">Con amor, Andy</span>
+          </div>
+
+          <div class="mt-6 text-center">
+            <button id="close-reveal-2" type="button" class="btn-close-letter">
+              Guardar mi carta 💛
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ ESTILOS ============ -->
+    <style is:global>
+      /* ============ TEMA "NOCHE INTIMA" ============ */
+      .cumple-body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: 'Inter', system-ui, sans-serif;
+        color: #FFFCF2;
+        background:
+          radial-gradient(ellipse at 20% 10%, rgba(255, 201, 60, 0.18) 0%, transparent 55%),
+          radial-gradient(ellipse at 80% 90%, rgba(255, 165, 38, 0.18) 0%, transparent 55%),
+          linear-gradient(180deg, #2B1810 0%, #3D2417 35%, #5C3A1E 100%);
+        background-attachment: fixed;
+        overflow-x: hidden;
+      }
+
+      /* Estrellas */
+      .stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+      .star {
+        position: absolute;
+        width: 2px; height: 2px;
+        background: #FFE39E;
+        border-radius: 50%;
+        opacity: 0;
+        animation: twinkle 4s ease-in-out infinite;
+        box-shadow: 0 0 6px rgba(255, 227, 158, 0.6);
+      }
+      @keyframes twinkle {
+        0%, 100% { opacity: 0.2; transform: scale(0.8); }
+        50% { opacity: 1; transform: scale(1.4); }
+      }
+
+      /* Tipografía */
+      .font-serif { font-family: 'Playfair Display', Georgia, serif; }
+      .font-script { font-family: 'Great Vibes', cursive; }
+      .font-display { font-family: 'Cormorant Garamond', Georgia, serif; }
+      .text-shadow-soft { text-shadow: 0 4px 24px rgba(0, 0, 0, 0.4); }
+
+      /* ============ LETTER CARD ============ */
+      .letter-card {
+        position: relative;
+        aspect-ratio: 3 / 4;
+        border-radius: 18px;
+        cursor: pointer;
+        transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.4s;
+      }
+      .letter-card:hover {
+        transform: translateY(-6px) rotate(-1deg);
+      }
+      .letter-card:active { transform: translateY(-2px) scale(0.99); }
+
+      /* Sobre (cuerpo) */
+      .envelope {
+        position: absolute; inset: 0;
+        background:
+          linear-gradient(135deg, #FFFCF2 0%, #FFF6E0 50%, #FFEFC9 100%);
+        border-radius: 18px;
+        box-shadow:
+          0 1px 0 rgba(255, 255, 255, 0.8) inset,
+          0 -1px 0 rgba(169, 109, 13, 0.15) inset,
+          0 20px 50px -15px rgba(0, 0, 0, 0.6);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 28px 22px;
+        text-align: center;
+        color: #6F4A09;
+        overflow: hidden;
+      }
+      .envelope::before {
+        content: '';
+        position: absolute;
+        inset: 8px;
+        border: 1.5px dashed rgba(169, 109, 13, 0.35);
+        border-radius: 12px;
+        pointer-events: none;
+      }
+
+      /* Solapa superior decorativa */
+      .envelope-flap {
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 55%;
+        background:
+          linear-gradient(180deg, rgba(212, 165, 116, 0.25) 0%, transparent 100%);
+        clip-path: polygon(0 0, 100% 0, 50% 100%);
+        pointer-events: none;
+      }
+
+      .envelope-day {
+        font-family: 'Great Vibes', cursive;
+        font-size: 22px;
+        color: #A56B0E;
+        margin-top: 30%;
+      }
+      .envelope-date {
+        font-family: 'Playfair Display', serif;
+        font-weight: 700;
+        font-size: 22px;
+        color: #6F4A09;
+        margin-top: 4px;
+      }
+      .envelope-datelabel {
+        font-family: 'Inter', sans-serif;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.25em;
+        color: #A56B0E;
+        margin-top: 4px;
+      }
+
+      /* Sello de cera */
+      .wax-seal {
+        position: absolute;
+        bottom: 18%;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background:
+          radial-gradient(circle at 35% 35%, #C53030 0%, #9B2C2C 60%, #742A2A 100%);
+        box-shadow:
+          0 2px 8px rgba(0, 0, 0, 0.3),
+          inset 0 -2px 4px rgba(0, 0, 0, 0.2),
+          inset 0 2px 4px rgba(255, 255, 255, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #FED7D7;
+        font-family: 'Playfair Display', serif;
+        font-weight: 700;
+        font-size: 26px;
+        pointer-events: none;
+        z-index: 2;
+      }
+
+      /* Candado (sólo en cartas bloqueadas) */
+      .padlock {
+        position: absolute;
+        top: 12px; right: 12px;
+        width: 36px; height: 36px;
+        border-radius: 50%;
+        background: rgba(45, 24, 16, 0.85);
+        color: #FFD466;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s;
+        z-index: 3;
+      }
+      .padlock svg { width: 18px; height: 18px; }
+
+      /* Estado badge */
+      .status-badge {
+        position: absolute;
+        top: 14px; left: 14px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+        backdrop-filter: blur(8px);
+        z-index: 3;
+      }
+
+      /* ============ ESTADOS ============ */
+      .letter-card.is-locked { cursor: not-allowed; }
+      .letter-card.is-locked:hover { transform: none; }
+      .letter-card.is-locked .envelope {
+        filter: brightness(0.7) saturate(0.6);
+      }
+      .letter-card.is-locked .padlock { opacity: 1; }
+      .letter-card.is-locked .status-badge {
+        background: rgba(45, 24, 16, 0.85);
+        color: #FFD466;
+      }
+
+      .letter-card.is-unlocked .status-badge {
+        background: rgba(255, 201, 60, 0.95);
+        color: #6F4A09;
+      }
+      .letter-card.is-today .status-badge {
+        background: rgba(197, 48, 48, 0.95);
+        color: #FED7D7;
+        animation: pulseSoft 2s ease-in-out infinite;
+      }
+
+      @keyframes pulseSoft {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+      }
+
+      /* ============ MODALES ============ */
+      .modal-overlay {
+        background: rgba(20, 10, 5, 0.75);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+      }
+
+      .modal-card {
+        position: relative;
+        width: 100%;
+        max-width: 480px;
+        background:
+          linear-gradient(135deg, #FFFCF2 0%, #FFF8E8 100%);
+        border: 2px solid #D4A574;
+        border-radius: 24px;
+        box-shadow:
+          0 30px 80px -20px rgba(0, 0, 0, 0.6),
+          0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+        color: #6F4A09;
+        overflow: hidden;
+        max-height: 90vh;
+        overflow-y: auto;
+        animation: modalIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      @keyframes modalIn {
+        from { opacity: 0; transform: translateY(20px) scale(0.95); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+      }
+
+      .modal-strip {
+        background: linear-gradient(90deg, #5C3A1E 0%, #8B5A2B 100%);
+        color: #FFFCF2;
+        padding: 12px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-family: 'Inter', sans-serif;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3em;
+      }
+      .modal-close {
+        background: none;
+        border: none;
+        color: #FFFCF2;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 6px;
+        transition: background 0.2s;
+      }
+      .modal-close:hover { background: rgba(255, 255, 255, 0.15); }
+
+      .modal-body { padding: 32px 28px; }
+
+      .modal-icon-wrap {
+        margin: 0 auto 20px;
+        width: 80px; height: 80px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #FFD466 0%, #F5B028 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 10px 30px -8px rgba(245, 176, 40, 0.5);
+      }
+
+      .modal-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 28px;
+        font-weight: 700;
+        color: #5C3A1E;
+        margin: 0 0 8px;
+        line-height: 1.15;
+      }
+      .modal-subtitle {
+        font-family: 'Cormorant Garamond', serif;
+        font-style: italic;
+        font-size: 18px;
+        color: #8B5A2B;
+        margin: 0;
+        line-height: 1.4;
+      }
+
+      .password-input {
+        width: 100%;
+        max-width: 280px;
+        padding: 14px 18px;
+        font-family: 'Playfair Display', serif;
+        font-size: 22px;
+        text-align: center;
+        background: #FFFCF2;
+        border: 2px solid #D4A574;
+        border-radius: 14px;
+        color: #5C3A1E;
+        letter-spacing: 0.15em;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+      }
+      .password-input:focus {
+        border-color: #F5B028;
+        box-shadow: 0 0 0 4px rgba(245, 176, 40, 0.15);
+      }
+      .password-input::placeholder {
+        color: #C5A572;
+        letter-spacing: normal;
+        font-style: italic;
+        font-size: 14px;
+        font-family: 'Cormorant Garamond', serif;
+      }
+
+      .btn-open {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 28px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, #FFD466 0%, #F5B028 100%);
+        color: #5C3A1E;
+        font-family: 'Inter', sans-serif;
+        font-weight: 600;
+        font-size: 14px;
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 8px 24px -8px rgba(245, 176, 40, 0.5);
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+      .btn-open:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 32px -8px rgba(245, 176, 40, 0.6);
+      }
+      .btn-open:active { transform: translateY(0); }
+
+      .btn-close-letter {
+        padding: 10px 22px;
+        border-radius: 999px;
+        background: transparent;
+        color: #8B5A2B;
+        border: 2px solid #D4A574;
+        font-family: 'Inter', sans-serif;
+        font-weight: 500;
+        font-size: 13px;
+        cursor: pointer;
+        transition: background 0.2s, color 0.2s;
+      }
+      .btn-close-letter:hover {
+        background: #5C3A1E;
+        color: #FFFCF2;
+        border-color: #5C3A1E;
+      }
+
+      .letter-content {
+        font-family: 'Cormorant Garamond', serif;
+        font-style: italic;
+        font-size: 19px;
+        line-height: 1.7;
+        color: #6F4A09;
+        text-align: left;
+        padding: 0 8px;
+      }
+
+      /* Shake animation for wrong password */
+      .shake { animation: shake 0.5s ease-in-out; }
+      @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-8px); }
+        75% { transform: translateX(8px); }
+      }
+    </style>
+
+    <!-- ============ LÓGICA ============ -->
+    <script>
+      type DayData = {
+        id: string;
+        date: string;
+        number: string;
+        name: string;
+        label: string;
+        title: string;
+        front: string;
+        insideTitle: string;
+        insideMessage: string;
+        insideEmoji: string;
+        requiresPassword: boolean;
+        password: string;
+        passwordHint: string;
+      };
+
+      const cards = Array.from(document.querySelectorAll<HTMLElement>('.letter-card'));
+
+      // Tiempo de desbloqueo: cada día a las 18:00 hs local.
+      const getUnlockTime = (dateStr: string): Date => {
+        const [y, m, d] = dateStr.split('-').map(Number);
+        return new Date(y, m - 1, d, 18, 0, 0);
+      };
+
+      const isUnlocked = (dateStr: string): boolean => {
+        return new Date().getTime() >= getUnlockTime(dateStr).getTime();
+      };
+
+      const todayStr = (() => {
+        const n = new Date();
+        return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
+      })();
+
+      // Renderizar el estado de cada carta
+      cards.forEach((card) => {
+        const date = card.dataset.dayDate!;
+        const number = card.dataset.dayNumber!;
+        const unlocked = isUnlocked(date);
+
+        card.classList.add(unlocked ? 'is-unlocked' : 'is-locked');
+        if (date === todayStr && unlocked) {
+          card.classList.add('is-today');
+        }
+
+        const badge = card.querySelector('.status-badge')!;
+        if (unlocked) {
+          badge.textContent = date === todayStr ? 'Hoy' : 'Abierta';
+        } else {
+          const unlock = getUnlockTime(date);
+          const dd = String(unlock.getDate()).padStart(2, '0');
+          const mm = String(unlock.getMonth() + 1).padStart(2, '0');
+          badge.textContent = `Disponible ${dd}/${mm} · 18:00`;
+        }
+      });
+
+      // ============ Modal helpers ============
+      const passwordModal = document.getElementById('password-modal')!;
+      const revealModal = document.getElementById('reveal-modal')!;
+      const passwordInput = document.getElementById('password-input') as HTMLInputElement;
+      const passwordHint = document.getElementById('password-hint')!;
+      const passwordError = document.getElementById('password-error')!;
+      const passwordForm = document.getElementById('password-form') as HTMLFormElement;
+      const passwordStrip = document.getElementById('password-strip-label')!;
+      const revealTitle = document.getElementById('reveal-title')!;
+      const revealMessage = document.getElementById('reveal-message')!;
+      const revealEmoji = document.getElementById('reveal-emoji')!;
+      const revealDayLabel = document.getElementById('reveal-day-label')!;
+      const revealStrip = document.getElementById('reveal-strip-label')!;
+
+      let currentDay: DayData | null = null;
+
+      const openModal = (el: HTMLElement) => {
+        el.classList.remove('hidden');
+        el.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+      };
+
+      const closeModal = (el: HTMLElement) => {
+        el.classList.add('hidden');
+        el.classList.remove('flex');
+        document.body.style.overflow = '';
+      };
+
+      const resetPasswordModal = () => {
+        passwordInput.value = '';
+        passwordError.classList.add('hidden');
+        passwordInput.classList.remove('shake');
+      };
+
+      const buildDayData = (card: HTMLElement): DayData => ({
+        id: card.dataset.dayId!,
+        date: card.dataset.dayDate!,
+        number: card.dataset.dayNumber!,
+        name: card.dataset.dayName!,
+        label: card.dataset.dayLabel!,
+        title: card.dataset.dayTitle!,
+        front: card.dataset.dayFront!,
+        insideTitle: card.dataset.dayInsideTitle!,
+        insideMessage: card.dataset.dayInsideMessage!,
+        insideEmoji: card.dataset.dayInsideEmoji!,
+        requiresPassword: card.dataset.dayRequiresPassword === 'true',
+        password: card.dataset.dayPassword ?? '',
+        passwordHint: card.dataset.dayPasswordHint ?? ''
+      });
+
+      const showPasswordModal = (day: DayData) => {
+        currentDay = day;
+        passwordStrip.textContent = `Carta del ${day.label}`;
+        passwordHint.textContent = day.passwordHint;
+        resetPasswordModal();
+        openModal(passwordModal);
+        setTimeout(() => passwordInput.focus(), 200);
+      };
+
+      const showRevealModal = (day: DayData) => {
+        revealStrip.textContent = `${day.name} · ${day.label}`;
+        revealTitle.textContent = day.insideTitle;
+        revealMessage.textContent = day.insideMessage;
+        revealEmoji.textContent = day.insideEmoji;
+        revealDayLabel.textContent = `Día ${day.number}`;
+        openModal(revealModal);
+      };
+
+      const handleCardClick = (card: HTMLElement) => {
+        if (card.classList.contains('is-locked')) return;
+        const day = buildDayData(card);
+        if (day.requiresPassword) showPasswordModal(day);
+        else showRevealModal(day);
+      };
+
+      cards.forEach((card) => card.addEventListener('click', () => handleCardClick(card)));
+
+      passwordForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (!currentDay) return;
+        const entered = passwordInput.value.trim();
+        if (entered === currentDay.password) {
+          closeModal(passwordModal);
+          showRevealModal(currentDay);
+        } else {
+          passwordError.classList.remove('hidden');
+          passwordInput.classList.remove('shake');
+          // forzar reflow para reiniciar la animación
+          void passwordInput.offsetWidth;
+          passwordInput.classList.add('shake');
+          passwordInput.select();
+        }
+      });
+
+      document.getElementById('close-password')?.addEventListener('click', () => closeModal(passwordModal));
+      document.getElementById('close-reveal')?.addEventListener('click', () => closeModal(revealModal));
+      document.getElementById('close-reveal-2')?.addEventListener('click', () => closeModal(revealModal));
+
+      [passwordModal, revealModal].forEach((m) => {
+        m.addEventListener('click', (e) => {
+          if (e.target === m) closeModal(m);
+        });
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeModal(passwordModal);
+          closeModal(revealModal);
+        }
+      });
+    </script>
+  </body>
+</html>
