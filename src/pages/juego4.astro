@@ -53,16 +53,16 @@
               <span class="ctrl-key">WASD</span>
               <span class="ctrl-label">Mover</span>
             </div>
+            <div class="ctrl-item ctrl-mobile">
+              <span class="ctrl-key">🕹️</span>
+              <span class="ctrl-label">Joystick</span>
+            </div>
             <div class="ctrl-item">
               <span class="ctrl-key">🖱️</span>
               <span class="ctrl-label">Apuntar</span>
             </div>
             <div class="ctrl-item">
               <span class="ctrl-key">CLICK</span>
-              <span class="ctrl-label">Disparar</span>
-            </div>
-            <div class="ctrl-item">
-              <span class="ctrl-key">SPACE</span>
               <span class="ctrl-label">Disparar</span>
             </div>
           </div>
@@ -92,7 +92,8 @@
           <div class="canvas-wrap">
             <canvas id="game-canvas" width="720" height="320"></canvas>
             <div class="canvas-instructions">
-              ⌨️ WASD para mover · 🖱️ Click para disparar
+              <span class="desktop-only">⌨️ WASD para mover · 🖱️ Click para disparar</span>
+              <span class="mobile-only">🕹️ Joystick para mover · 👆 Tap para disparar</span>
             </div>
           </div>
 
@@ -356,6 +357,13 @@
         color: #FFD466;
         letter-spacing: 0.05em;
         pointer-events: none;
+        white-space: nowrap;
+      }
+      .canvas-instructions .desktop-only { display: inline; }
+      .canvas-instructions .mobile-only { display: none; }
+      @media (hover: none) and (pointer: coarse) {
+        .canvas-instructions .desktop-only { display: none; }
+        .canvas-instructions .mobile-only { display: inline; }
       }
 
       /* Tower HUD */
@@ -1142,6 +1150,7 @@
         drawParticles();
         drawMariela();
         drawAimIndicator();
+        drawJoystick();
       };
 
       const gameLoop = (now: number) => {
@@ -1164,23 +1173,200 @@
       };
 
       canvas.addEventListener('click', handleShoot);
-      canvas.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        handleShoot();
-      });
 
-      // Mouse tracking para aim
+      // ============================================================
+      // JOYSTICK VIRTUAL (para móvil)
+      // ============================================================
+      const joystick = {
+        active: false,
+        mouseActive: false,
+        touchId: null as number | null,
+        baseX: 75,
+        baseY: 240,
+        thumbX: 75,
+        thumbY: 240,
+        radius: 55,
+        thumbRadius: 22
+      };
+
+      const updateJoystick = (x: number, y: number) => {
+        const dx = x - joystick.baseX;
+        const dy = y - joystick.baseY;
+        const dist = Math.hypot(dx, dy);
+        const maxDist = joystick.radius;
+
+        if (dist > maxDist) {
+          joystick.thumbX = joystick.baseX + (dx / dist) * maxDist;
+          joystick.thumbY = joystick.baseY + (dy / dist) * maxDist;
+        } else {
+          joystick.thumbX = x;
+          joystick.thumbY = y;
+        }
+
+        const moveX = (joystick.thumbX - joystick.baseX) / maxDist;
+        const moveY = (joystick.thumbY - joystick.baseY) / maxDist;
+        keys['ArrowLeft'] = moveX < -0.25;
+        keys['ArrowRight'] = moveX > 0.25;
+        keys['ArrowUp'] = moveY < -0.25;
+        keys['ArrowDown'] = moveY > 0.25;
+      };
+
+      const resetJoystick = () => {
+        joystick.active = false;
+        joystick.mouseActive = false;
+        joystick.touchId = null;
+        joystick.thumbX = joystick.baseX;
+        joystick.thumbY = joystick.baseY;
+        keys['ArrowLeft'] = false;
+        keys['ArrowRight'] = false;
+        keys['ArrowUp'] = false;
+        keys['ArrowDown'] = false;
+      };
+
+      const drawJoystick = () => {
+        ctx.save();
+        const alpha = joystick.active ? 0.85 : 0.35;
+        ctx.globalAlpha = alpha;
+
+        // Base
+        const baseGrad = ctx.createRadialGradient(
+          joystick.baseX, joystick.baseY, 0,
+          joystick.baseX, joystick.baseY, joystick.radius
+        );
+        baseGrad.addColorStop(0, 'rgba(255, 212, 102, 0.25)');
+        baseGrad.addColorStop(1, 'rgba(255, 212, 102, 0.1)');
+        ctx.fillStyle = baseGrad;
+        ctx.beginPath();
+        ctx.arc(joystick.baseX, joystick.baseY, joystick.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255, 212, 102, 0.6)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Líneas guía (cruz)
+        ctx.strokeStyle = 'rgba(255, 212, 102, 0.3)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(joystick.baseX - joystick.radius * 0.7, joystick.baseY);
+        ctx.lineTo(joystick.baseX + joystick.radius * 0.7, joystick.baseY);
+        ctx.moveTo(joystick.baseX, joystick.baseY - joystick.radius * 0.7);
+        ctx.lineTo(joystick.baseX, joystick.baseY + joystick.radius * 0.7);
+        ctx.stroke();
+
+        // Línea de dirección (cuando está activo)
+        if (joystick.active) {
+          ctx.strokeStyle = 'rgba(255, 212, 102, 0.7)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(joystick.baseX, joystick.baseY);
+          ctx.lineTo(joystick.thumbX, joystick.thumbY);
+          ctx.stroke();
+        }
+
+        // Thumb
+        const thumbGrad = ctx.createRadialGradient(
+          joystick.thumbX - 6, joystick.thumbY - 6, 0,
+          joystick.thumbX, joystick.thumbY, joystick.thumbRadius
+        );
+        thumbGrad.addColorStop(0, '#FEF3C7');
+        thumbGrad.addColorStop(1, '#F5B028');
+        ctx.fillStyle = thumbGrad;
+        ctx.beginPath();
+        ctx.arc(joystick.thumbX, joystick.thumbY, joystick.thumbRadius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#D97706';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.restore();
+      };
+
+      const isOnJoystick = (x: number, y: number) => {
+        const dist = Math.hypot(x - joystick.baseX, y - joystick.baseY);
+        return dist <= joystick.radius * 1.5; // zona un poco más grande que el radio base
+      };
+
+      // Mouse tracking para aim + joystick
       canvas.addEventListener('mousemove', (e) => {
         const rect = canvas.getBoundingClientRect();
-        state.mouseX = ((e.clientX - rect.left) / rect.width) * W;
-        state.mouseY = ((e.clientY - rect.top) / rect.height) * H;
+        const x = ((e.clientX - rect.left) / rect.width) * W;
+        const y = ((e.clientY - rect.top) / rect.height) * H;
+        if (joystick.mouseActive) {
+          updateJoystick(x, y);
+        } else {
+          state.mouseX = x;
+          state.mouseY = y;
+        }
       });
+
+      canvas.addEventListener('mousedown', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * W;
+        const y = ((e.clientY - rect.top) / rect.height) * H;
+        if (isOnJoystick(x, y)) {
+          joystick.mouseActive = true;
+          updateJoystick(x, y);
+        } else {
+          state.mouseX = x;
+          state.mouseY = y;
+          handleShoot();
+        }
+      });
+
+      canvas.addEventListener('mouseup', () => {
+        if (joystick.mouseActive) {
+          resetJoystick();
+        }
+      });
+
+      // Touch handlers
+      canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          const touch = e.changedTouches[i];
+          const rect = canvas.getBoundingClientRect();
+          const x = ((touch.clientX - rect.left) / rect.width) * W;
+          const y = ((touch.clientY - rect.top) / rect.height) * H;
+
+          if (isOnJoystick(x, y) && !joystick.active) {
+            joystick.active = true;
+            joystick.touchId = touch.identifier;
+            updateJoystick(x, y);
+          } else if (joystick.touchId !== touch.identifier) {
+            state.mouseX = x;
+            state.mouseY = y;
+            handleShoot();
+          }
+        }
+      }, { passive: false });
+
       canvas.addEventListener('touchmove', (e) => {
         e.preventDefault();
-        const touch = e.touches[0];
-        const rect = canvas.getBoundingClientRect();
-        state.mouseX = ((touch.clientX - rect.left) / rect.width) * W;
-        state.mouseY = ((touch.clientY - rect.top) / rect.height) * H;
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          const touch = e.changedTouches[i];
+          const rect = canvas.getBoundingClientRect();
+          const x = ((touch.clientX - rect.left) / rect.width) * W;
+          const y = ((touch.clientY - rect.top) / rect.height) * H;
+          if (touch.identifier === joystick.touchId && joystick.active) {
+            updateJoystick(x, y);
+          } else {
+            state.mouseX = x;
+            state.mouseY = y;
+          }
+        }
+      }, { passive: false });
+
+      canvas.addEventListener('touchend', (e) => {
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          const touch = e.changedTouches[i];
+          if (touch.identifier === joystick.touchId) {
+            resetJoystick();
+          }
+        }
+      });
+
+      canvas.addEventListener('touchcancel', () => {
+        resetJoystick();
       });
 
       // Teclado: WASD/flechas para mover, SPACE para disparar
