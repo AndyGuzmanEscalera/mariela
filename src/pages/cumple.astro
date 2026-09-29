@@ -1159,7 +1159,12 @@ const days = [
         return new Date(y, m - 1, d, 6, 0, 0);
       };
 
+      // Debug: ?unlock=all desbloquea TODAS las cartas (solo para testing local)
+      const urlParams = new URLSearchParams(window.location.search);
+      const DEBUG_UNLOCK_ALL = urlParams.get('unlock') === 'all';
+
       const isUnlocked = (dateStr: string): boolean => {
+        if (DEBUG_UNLOCK_ALL) return true;
         return new Date().getTime() >= getUnlockTime(dateStr).getTime();
       };
 
