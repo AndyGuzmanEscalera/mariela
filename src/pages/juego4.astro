@@ -81,7 +81,7 @@
             </div>
             <div class="hud-item">
               <span class="hud-label">Oleada</span>
-              <div class="hud-wave" id="hud-wave">1 / 3</div>
+              <div class="hud-wave" id="hud-wave">Ola 1</div>
             </div>
             <div class="hud-item">
               <span class="hud-label">Puntaje</span>
@@ -626,80 +626,191 @@
         const y = state.marielaY;
         const isMoving = Math.abs(state.marielaVX) > 5 || Math.abs(state.marielaVY) > 5;
         const walkFrame = isMoving ? Math.floor(performance.now() / 150) % 2 : 0;
+        const breathe = Math.sin(performance.now() / 600) * 0.04;
 
-        // Glow
+        // Aura externa (resplandor mágico)
         const cx = x + MARIELA_W / 2;
         const cy = y + MARIELA_H / 2;
-        const glowGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 55);
-        glowGrad.addColorStop(0, 'rgba(255, 212, 102, 0.4)');
+        const auraGrad = ctx.createRadialGradient(cx, cy - 6, 4, cx, cy, 65);
+        auraGrad.addColorStop(0, 'rgba(168, 85, 247, 0.15)');
+        auraGrad.addColorStop(0.5, 'rgba(255, 212, 102, 0.18)');
+        auraGrad.addColorStop(1, 'rgba(255, 212, 102, 0)');
+        ctx.fillStyle = auraGrad;
+        ctx.fillRect(x - 30, y - 30, MARIELA_W + 60, MARIELA_H + 60);
+
+        // Glow dorado cercano
+        const glowGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 38);
+        glowGrad.addColorStop(0, 'rgba(255, 212, 102, 0.45)');
         glowGrad.addColorStop(1, 'rgba(255, 212, 102, 0)');
         ctx.fillStyle = glowGrad;
-        ctx.fillRect(x - 20, y - 20, MARIELA_W + 40, MARIELA_H + 40);
+        ctx.fillRect(x - 15, y - 15, MARIELA_W + 30, MARIELA_H + 30);
 
         // Rotar a Mariela según ángulo de mira
         ctx.save();
         ctx.translate(cx, cy);
         ctx.rotate(state.marielaAngle);
 
-        // Body (dress/robe)
-        ctx.fillStyle = '#F5B028';
+        // Capa (detrás del cuerpo)
+        ctx.fillStyle = 'rgba(124, 58, 237, 0.5)';
+        ctx.beginPath();
+        ctx.moveTo(-MARIELA_W / 2 - 4, -MARIELA_H / 2 + 22);
+        ctx.quadraticCurveTo(-MARIELA_W / 2 - 10, 0, -MARIELA_W / 2 - 2, MARIELA_H / 2);
+        ctx.lineTo(MARIELA_W / 2 - 2, MARIELA_H / 2);
+        ctx.quadraticCurveTo(MARIELA_W / 2 + 10, 0, MARIELA_W / 2 + 4, -MARIELA_H / 2 + 22);
+        ctx.closePath();
+        ctx.fill();
+
+        // Vestido (cuerpo) - con degradado
+        const dressGrad = ctx.createLinearGradient(0, -MARIELA_H / 2 + 18, 0, MARIELA_H / 2);
+        dressGrad.addColorStop(0, '#FCD34D');
+        dressGrad.addColorStop(1, '#D97706');
+        ctx.fillStyle = dressGrad;
         ctx.beginPath();
         ctx.moveTo(-MARIELA_W / 2 + 8, -MARIELA_H / 2 + 20);
         ctx.lineTo(MARIELA_W / 2 - 8, -MARIELA_H / 2 + 20);
-        ctx.lineTo(MARIELA_W / 2 - 4, MARIELA_H / 2);
-        ctx.lineTo(-MARIELA_W / 2 + 4, MARIELA_H / 2);
+        ctx.lineTo(MARIELA_W / 2 - 2, MARIELA_H / 2 - 2);
+        ctx.lineTo(-MARIELA_W / 2 + 2, MARIELA_H / 2 - 2);
         ctx.closePath();
         ctx.fill();
-        ctx.strokeStyle = '#A56B0E';
+        ctx.strokeStyle = '#92400E';
         ctx.lineWidth = 1.5;
         ctx.stroke();
 
-        // Head
+        // Cinturón decorativo
+        ctx.strokeStyle = '#7C3AED';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-MARIELA_W / 2 + 8, -MARIELA_H / 2 + 30);
+        ctx.lineTo(MARIELA_W / 2 - 8, -MARIELA_H / 2 + 30);
+        ctx.stroke();
+        ctx.fillStyle = '#F0ABFC';
+        ctx.beginPath();
+        ctx.arc(0, -MARIELA_H / 2 + 30, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Brazos
+        ctx.fillStyle = '#FCD34D';
+        ctx.fillRect(-MARIELA_W / 2 - 2, -MARIELA_H / 2 + 22, 4, 18);
+        ctx.strokeStyle = '#92400E';
+        ctx.lineWidth = 0.8;
+        ctx.strokeRect(-MARIELA_W / 2 - 2, -MARIELA_H / 2 + 22, 4, 18);
+
+        // Cabeza
         ctx.fillStyle = '#FEF3C7';
         ctx.beginPath();
-        ctx.arc(0, -MARIELA_H / 2 + 16, 12, 0, Math.PI * 2);
+        ctx.arc(0, -MARIELA_H / 2 + 14, 11, 0, Math.PI * 2);
         ctx.fill();
         ctx.strokeStyle = '#D97706';
         ctx.lineWidth = 1.2;
         ctx.stroke();
 
-        // Hair
-        ctx.fillStyle = '#92400E';
+        // Cabello (largo y con mechones)
+        ctx.fillStyle = '#451A03';
         ctx.beginPath();
-        ctx.arc(-4, -MARIELA_H / 2 + 8, 9, Math.PI, Math.PI * 2);
+        ctx.arc(-2, -MARIELA_H / 2 + 4, 11, Math.PI, Math.PI * 2);
         ctx.fill();
-        ctx.fillRect(-13, -MARIELA_H / 2 + 8, 5, 12);
-
-        // Crown
-        ctx.fillStyle = '#FFD466';
+        // Mechón lateral
+        ctx.fillRect(-12, -MARIELA_H / 2 + 6, 4, 14);
+        // Mechón derecho
+        ctx.fillRect(8, -MARIELA_H / 2 + 8, 3, 12);
+        // Mechón detrás
         ctx.beginPath();
-        ctx.moveTo(-8, -MARIELA_H / 2 + 4);
-        ctx.lineTo(-5, -MARIELA_H / 2 - 1);
-        ctx.lineTo(-2, -MARIELA_H / 2 + 4);
-        ctx.lineTo(1, -MARIELA_H / 2 - 1);
-        ctx.lineTo(4, -MARIELA_H / 2 + 4);
-        ctx.lineTo(7, -MARIELA_H / 2 - 1);
-        ctx.lineTo(8, -MARIELA_H / 2 + 4);
+        ctx.ellipse(0, -MARIELA_H / 2 + 8, 10, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Corona detallada
+        ctx.fillStyle = '#FFD466';
+        ctx.strokeStyle = '#B45309';
+        ctx.lineWidth = 1.2;
+        // Base de la corona
+        ctx.fillRect(-9, -MARIELA_H / 2 - 2, 18, 4);
+        ctx.strokeRect(-9, -MARIELA_H / 2 - 2, 18, 4);
+        // Puntas
+        ctx.beginPath();
+        ctx.moveTo(-9, -MARIELA_H / 2 - 2);
+        ctx.lineTo(-6, -MARIELA_H / 2 - 7);
+        ctx.lineTo(-3, -MARIELA_H / 2 - 2);
+        ctx.lineTo(0, -MARIELA_H / 2 - 8);
+        ctx.lineTo(3, -MARIELA_H / 2 - 2);
+        ctx.lineTo(6, -MARIELA_H / 2 - 7);
+        ctx.lineTo(9, -MARIELA_H / 2 - 2);
         ctx.closePath();
         ctx.fill();
-        ctx.strokeStyle = '#D97706';
-        ctx.lineWidth = 0.8;
+        ctx.stroke();
+        // Gema central
+        ctx.fillStyle = '#DC2626';
+        ctx.beginPath();
+        ctx.arc(0, -MARIELA_H / 2 - 4, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#FCA5A5';
+        ctx.beginPath();
+        ctx.arc(-0.8, -MARIELA_H / 2 - 5, 1, 0, Math.PI * 2);
+        ctx.fill();
+        // Joyas laterales
+        ctx.fillStyle = '#3B82F6';
+        ctx.beginPath();
+        ctx.arc(-7, -MARIELA_H / 2 - 4, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(7, -MARIELA_H / 2 - 4, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Ojos (con brillo)
+        ctx.fillStyle = '#1F2937';
+        ctx.beginPath();
+        ctx.arc(-3.5, -MARIELA_H / 2 + 13, 1.8, 0, Math.PI * 2);
+        ctx.arc(3.5, -MARIELA_H / 2 + 13, 1.8, 0, Math.PI * 2);
+        ctx.fill();
+        // Brillo de ojos
+        ctx.fillStyle = '#FFFCF2';
+        ctx.beginPath();
+        ctx.arc(-3, -MARIELA_H / 2 + 12.2, 0.8, 0, Math.PI * 2);
+        ctx.arc(4, -MARIELA_H / 2 + 12.2, 0.8, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Mejillas (rubor)
+        ctx.fillStyle = 'rgba(244, 114, 182, 0.4)';
+        ctx.beginPath();
+        ctx.arc(-6, -MARIELA_H / 2 + 17, 2.5, 0, Math.PI * 2);
+        ctx.arc(6, -MARIELA_H / 2 + 17, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Sonrisa
+        ctx.strokeStyle = '#7C2D12';
+        ctx.lineWidth = 1.2;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.arc(0, -MARIELA_H / 2 + 16, 3, 0.2, Math.PI - 0.2);
         ctx.stroke();
 
-        // Arco (apunta hacia adelante según rotación)
-        ctx.strokeStyle = '#92400E';
-        ctx.lineWidth = 2;
+        // Arco (con flecha cargada)
+        ctx.strokeStyle = '#451A03';
+        ctx.lineWidth = 2.5;
         ctx.beginPath();
-        ctx.arc(MARIELA_W / 2 + 4, 4, 12, -Math.PI / 3, Math.PI / 3);
+        ctx.arc(MARIELA_W / 2 + 5, 6, 11, -Math.PI / 2.5, Math.PI / 2.5);
         ctx.stroke();
+        // Cuerda del arco
         ctx.strokeStyle = '#FFFCF2';
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.moveTo(MARIELA_W / 2 + 4, -8);
-        ctx.lineTo(MARIELA_W / 2 + 4, 16);
+        ctx.moveTo(MARIELA_W / 2 + 5, -5);
+        ctx.lineTo(MARIELA_W / 2 + 5, 17);
         ctx.stroke();
+        // Punta de flecha
+        ctx.fillStyle = '#A855F7';
+        ctx.beginPath();
+        ctx.moveTo(MARIELA_W / 2 + 5, -10);
+        ctx.lineTo(MARIELA_W / 2 + 2, -5);
+        ctx.lineTo(MARIELA_W / 2 + 8, -5);
+        ctx.closePath();
+        ctx.fill();
+        // Glow en la flecha
+        ctx.fillStyle = 'rgba(168, 85, 247, 0.4)';
+        ctx.beginPath();
+        ctx.arc(MARIELA_W / 2 + 5, -8, 4, 0, Math.PI * 2);
+        ctx.fill();
 
-        // Piernas (animadas)
+        // Piernas animadas
         ctx.fillStyle = '#A56B0E';
         if (walkFrame === 0) {
           ctx.fillRect(-8, MARIELA_H / 2 - 2, 6, 4);
@@ -707,6 +818,16 @@
         } else {
           ctx.fillRect(-8, MARIELA_H / 2 - 1, 6, 3);
           ctx.fillRect(4, MARIELA_H / 2 - 2, 6, 4);
+        }
+
+        // Botas
+        ctx.fillStyle = '#451A03';
+        if (walkFrame === 0) {
+          ctx.fillRect(-9, MARIELA_H / 2 + 1, 8, 3);
+          ctx.fillRect(3, MARIELA_H / 2 + 2, 8, 2);
+        } else {
+          ctx.fillRect(-9, MARIELA_H / 2 + 2, 8, 2);
+          ctx.fillRect(3, MARIELA_H / 2 + 1, 8, 3);
         }
 
         ctx.restore();
@@ -1078,7 +1199,7 @@
         const wave = document.getElementById('hud-wave');
         const score = document.getElementById('hud-score');
         if (hearts) hearts.textContent = '❤️'.repeat(Math.max(0, state.marielaHP)) || '💀';
-        if (wave) wave.textContent = `${state.wave} / 3`;
+        if (wave) wave.textContent = `Ola ${state.wave}`;
         if (score) score.textContent = String(state.score);
         updateTowerHUD();
       };
@@ -1098,18 +1219,18 @@
         // Tower shake decay
         if (state.towerShake > 0) state.towerShake = Math.max(0, state.towerShake - dt * 30);
 
-        // Wave progression
+        // Spawn continuo de minions (oleadas infinitas hasta destruir torre)
         state.spawnTimer -= dt;
-        const waveConfig: Record<number, { spawns: number; total: number }> = {
-          1: { spawns: 5, total: 5 },
-          2: { spawns: 7, total: 7 },
-          3: { spawns: 9, total: 9 }
-        };
-        const cfg = waveConfig[state.wave];
-        if (state.waveProgress < cfg.spawns && state.spawnTimer <= 0) {
+        if (state.spawnTimer <= 0 && state.minions.length < 12) {
           spawnMinion();
+          // Spawn rate aumenta a medida que la torre tiene menos HP
+          const hpRatio = state.towerHP / state.towerMax;
+          const baseInterval = 1.5;
+          const fastInterval = 0.45;
+          state.spawnTimer = baseInterval - (baseInterval - fastInterval) * (1 - hpRatio);
           state.waveProgress++;
-          state.spawnTimer = state.wave === 3 ? 0.8 : 1.2;
+          // Actualizar "oleada" visual cada 10 spawns
+          if (state.waveProgress % 10 === 0) state.wave++;
         }
 
         // Mariela movement (WASD/arrows)
@@ -1199,51 +1320,31 @@
           return true;
         });
 
-        // Mariela auto-attacks tower when close (Lazaan a la torre)
+        // Projectiles vs Tower: los disparos dañan la torre
         const towerX = W - TOWER_W - 30;
-        const distToTower = Math.hypot(
-          state.marielaX + MARIELA_W / 2 - (towerX + TOWER_W / 2),
-          state.marielaY + MARIELA_H / 2 - (GROUND_Y - TOWER_H / 2)
-        );
-        if (
-          distToTower < 120 &&
-          state.wave >= 3 &&
-          state.waveProgress >= cfg.total &&
-          state.minions.length === 0 &&
-          state.towerHP > 0
-        ) {
-          if (Math.random() < dt * 3.5) {
-            state.towerHP = Math.max(0, state.towerHP - 5);  // Mucho más daño
-            state.towerShake = 6;
-            spawnParticles(towerX + TOWER_W / 2, GROUND_Y - TOWER_H / 2, '#A855F7', 8);
-            spawnParticles(towerX + TOWER_W / 2, GROUND_Y - TOWER_H / 2, '#EF4444', 6);
-            // Flecha visual hacia la torre
-            const arrowX = state.marielaX + MARIELA_W;
-            const arrowY = state.marielaY + MARIELA_H / 2;
-            for (let i = 0; i < 5; i++) {
-              spawnParticles(
-                arrowX + (towerX - arrowX) * (i / 5),
-                arrowY + (Math.random() - 0.5) * 30,
-                '#A855F7',
-                1
-              );
-            }
+        const towerBounds = { x: towerX, y: GROUND_Y - TOWER_H, w: TOWER_W, h: TOWER_H };
+        state.projectiles = state.projectiles.filter((p) => {
+          if (
+            p.x > towerBounds.x &&
+            p.x < towerBounds.x + towerBounds.w &&
+            p.y > towerBounds.y &&
+            p.y < towerBounds.y + towerBounds.h
+          ) {
+            // Impacto en torre
+            state.towerHP = Math.max(0, state.towerHP - 3);
+            state.towerShake = 5;
+            state.score += 2;
+            spawnParticles(p.x, p.y, '#A855F7', 6);
+            spawnParticles(p.x, p.y, '#EF4444', 4);
             updateTowerHUD();
+            return false;  // eliminar projectile
           }
-        }
+          return true;
+        });
 
         // Clean up
         state.minions = state.minions.filter((m) => m.x > -50);
         state.particles = state.particles.filter((p) => p.life > 0);
-
-        // Wave transition
-        if (state.waveProgress >= cfg.total && state.minions.length === 0 && state.towerHP > 0) {
-          if (state.wave < 3) {
-            state.wave++;
-            state.waveProgress = 0;
-            state.spawnTimer = 1.5;
-          }
-        }
 
         // Check victory
         if (state.towerHP <= 0) {
