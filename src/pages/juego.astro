@@ -501,19 +501,19 @@
         {
           emojis: ['🛡️', '💪', '⚔️'],
           answer: 'Tank / Guerrero',
-          options: ['Tank / Guerrero', 'Maga', 'Asesina', 'Soporte'],
+          options: ['Tank / Guerrero', 'Maga', 'Asesina', 'Apoyo'],
           hint: 'Defiende al equipo y aguanta todo el daño'
         },
         {
           emojis: ['🧙‍♀️', '🔮', '✨'],
           answer: 'Maga',
-          options: ['Arquera', 'Maga', 'Luchadora', 'Soporte'],
+          options: ['Arquera', 'Maga', 'Luchadora', 'Apoyo'],
           hint: 'Lanza hechizos devastadores desde lejos'
         },
         {
           emojis: ['🏹', '🌿', '👁️'],
           answer: 'Arquera',
-          options: ['Tank / Guerrero', 'Soporte', 'Arquera', 'Maga'],
+          options: ['Tank / Guerrero', 'Apoyo', 'Arquera', 'Maga'],
           hint: 'Ataca desde lejos con precisión mortal'
         },
         {
@@ -524,19 +524,20 @@
         },
         {
           emojis: ['💖', '🌸', '🤲'],
-          answer: 'Soporte',
-          options: ['Soporte', 'Asesina', 'Luchadora', 'Arquera'],
+          answer: 'Apoyo',
+          options: ['Apoyo', 'Asesina', 'Luchadora', 'Arquera'],
           hint: 'Cura al equipo y lo hace más fuerte'
         }
       ];
 
       const heroines: Heroine[] = [
+        { name: 'Hanabi', role: 'Tiradora', emoji: '🏹💥' },
+        { name: 'Miya', role: 'Tiradora', emoji: '🌟🏹' },
         { name: 'Guinevere', role: 'Maga', emoji: '👸✨' },
         { name: 'Fanny', role: 'Asesina', emoji: '🗡️💨' },
         { name: 'Kagura', role: 'Maga', emoji: '🧙‍♀️🔮' },
         { name: 'Chou', role: 'Luchador', emoji: '🥋⚡' },
-        { name: 'Angela', role: 'Soporte', emoji: '💖🌸' },
-        { name: 'Kimmy', role: 'Tiradora', emoji: '🏹🎯' }
+        { name: 'Angela', role: 'Apoyo', emoji: '💖🌸' }
       ];
 
       const baseUrl = document.documentElement.dataset.baseUrl || '/mariela/';
@@ -666,6 +667,10 @@
       // ---------- Resultado ----------
       const showResult = (name: string, role: string) => {
         const messages: Record<string, string> = {
+          Hanabi:
+            'Hanabi lanza sus flechas con una precisión increíble, llena de luz y de poder. Como vos cuando jugás: enfocada, segura, sin que nada la detenga. Esa heroína brilla con cada disparo, igual que vos brillas con cada cosa que hacés.',
+          Miya:
+            'Miya dispara desde lejos con precisión y paciencia. Es de las primeras heroínas del juego, clásica, y vos la elegís porque algo de esa esencia tenés: sos de las que llegan al corazón con calma pero seguro.',
           Guinevere:
             'Guinevere es elegante, poderosa y tiene un corazón noble. Como vos, Mariela: fuerte por fuera pero suave por dentro. Esa heroína no pelea sola — y yo tampoco quiero estar solo en esto.',
           Fanny:
@@ -675,9 +680,7 @@
           Chou:
             'Chou nunca se rinde, aguanta todo lo que le tiren y siempre vuelve más fuerte. Eso sos vos, Mariela. Y es por eso que te admiro tanto.',
           Angela:
-            'Angela cuida, protege y da todo por los que quiere. Si vos fueras una heroína, sin duda serías Angela: porque el cariño que das no tiene comparación.',
-          Kimmy:
-            'Kimmy es dulce, tierna, pero tiene un poder enorme cuando se lo propone. Como vos: que con esa carita hermosa guardás una fuerza increíble.'
+            'Angela cuida, protege y da todo por los que quiere. Si vos fueras una heroína, sin duda serías Angela: porque el cariño que das no tiene comparación.'
         };
 
         const message =
