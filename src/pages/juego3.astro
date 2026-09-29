@@ -1,0 +1,1033 @@
+---
+/**
+ * /juego3 — "Batalla Épica" (Boss Fight MOBA)
+ * ---------------------------------------------------------
+ * Mariela pelea contra un Lord Boss. Tiene 3 vidas y 3
+ * habilidades con cooldowns. El boss ataca en oleadas con
+ * diferentes fases. Esquivá sus ataques y derrotalo.
+ *
+ * Al final, el resultado se guarda en el repo (vía Worker).
+ */
+---
+
+<!doctype html>
+<html lang="es" data-base-url={import.meta.env.BASE_URL}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5" />
+    <meta name="theme-color" content="#1A0F2E" />
+    <title>Batalla Épica · Para Mariela ⚔️</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="battle-body">
+    <!-- Partículas de fondo -->
+    <div class="battle-dust" aria-hidden="true">
+      {Array.from({ length: 35 }).map((_, i) => (
+        <span
+          class="dust"
+          style={`top:${Math.random() * 100}%; left:${Math.random() * 100}%; animation-delay:${Math.random() * 5}s; animation-duration:${3 + Math.random() * 4}s;`}
+        ></span>
+      ))}
+    </div>
+
+    <main class="relative z-10 min-h-screen flex items-center justify-center px-4 py-6">
+      <div class="battle-frame" id="battle-frame">
+
+        <!-- ============ PANTALLA 1: Bienvenida ============ -->
+        <section id="screen-welcome" class="screen screen-active">
+          <div class="game-stamp">⚔️ Boss Fight</div>
+          <h1 class="game-title">Batalla Épica</h1>
+          <p class="game-subtitle">
+            Mariela, el Lord Boss apareció.
+            <br />
+            Tenés 3 vidas y 3 habilidades. Esquivá sus ataques
+            <br />
+            y derrotalo con todo lo que tengas.
+          </p>
+          <button id="btn-start" type="button" class="game-btn">
+            <span>¡A la batalla!</span>
+            <span class="text-xl">⚔️</span>
+          </button>
+        </section>
+
+        <!-- ============ PANTALLA 2: Combate ============ -->
+        <section id="screen-battle" class="screen battle-screen">
+          <!-- HUD del boss -->
+          <div class="boss-section">
+            <div class="boss-info">
+              <div class="boss-name-row">
+                <span class="boss-name">🐉 Lord Boss</span>
+                <span id="boss-phase" class="boss-phase">Fase 1</span>
+              </div>
+              <div class="hp-track boss-hp-track">
+                <div id="boss-hp-fill" class="hp-fill boss-hp-fill"></div>
+                <span id="boss-hp-text" class="hp-text">200 / 200</span>
+              </div>
+            </div>
+
+            <div id="boss-sprite" class="boss-sprite">
+              <!-- SVG del boss insertado en JS -->
+            </div>
+
+            <!-- Warning de ataque del boss -->
+            <div id="attack-warning" class="attack-warning hidden">
+              <span class="warning-icon">⚠️</span>
+              <span class="warning-text">¡CUIDADO! ATAQUE ENEMIGO</span>
+            </div>
+          </div>
+
+          <!-- Separador épico -->
+          <div class="battle-divider">
+            <span class="line"></span>
+            <span class="vs-icon">⚔️</span>
+            <span class="line"></span>
+          </div>
+
+          <!-- HUD del jugador -->
+          <div class="player-section">
+            <div id="player-sprite" class="player-sprite">
+              <!-- SVG de la jugadora -->
+            </div>
+            <div class="player-info">
+              <div class="player-name-row">
+                <span class="player-name">🌸 Mariela</span>
+                <div id="player-hearts" class="hearts">
+                  <span class="heart">❤️</span>
+                  <span class="heart">❤️</span>
+                  <span class="heart">❤️</span>
+                </div>
+              </div>
+              <div class="hp-track player-hp-track">
+                <div id="player-hp-fill" class="hp-fill player-hp-fill"></div>
+                <span id="player-hp-text" class="hp-text">60 / 60</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Skills -->
+          <div class="skills-bar">
+            <button id="skill-attack" class="skill-btn" data-cooldown="1">
+              <span class="skill-icon">⚔️</span>
+              <span class="skill-name">Ataque</span>
+              <span class="skill-cd">10 dmg</span>
+            </button>
+            <button id="skill-special" class="skill-btn skill-special" data-cooldown="4">
+              <span class="skill-icon">🔥</span>
+              <span class="skill-name">Habilidad Épica</span>
+              <span class="skill-cd">30 dmg</span>
+            </button>
+            <button id="skill-dodge" class="skill-btn skill-dodge" data-cooldown="5">
+              <span class="skill-icon">💨</span>
+              <span class="skill-name">Esquivar</span>
+              <span class="skill-cd">Bloquea</span>
+            </button>
+          </div>
+
+          <!-- Damage log -->
+          <div id="damage-log" class="damage-log"></div>
+        </section>
+
+        <!-- ============ PANTALLA 3: Victoria ============ -->
+        <section id="screen-victory" class="screen">
+          <div class="victory-aura">🏆</div>
+          <p class="game-stamp">Victoria</p>
+          <h2 class="game-title">¡Lo lograste, Mariela!</h2>
+
+          <div class="victory-stats">
+            <div class="stat-row">
+              <span class="stat-label">Daño total</span>
+              <span id="stat-damage" class="stat-value">0</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Ataques dados</span>
+              <span id="stat-attacks" class="stat-value">0</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Ataques esquivados</span>
+              <span id="stat-dodges" class="stat-value">0</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Vidas restantes</span>
+              <span id="stat-hearts" class="stat-value">3 / 3</span>
+            </div>
+          </div>
+
+          <p class="victory-message">
+            Derrotaste al Lord Boss. Como en cada batalla, te las arreglaste
+            con lo que tenías, sin rendirte. Y eso, Mariela, es lo que más
+            me enamora de vos.
+          </p>
+
+          <div class="result-footer">
+            <span class="line"></span>
+            <span class="font-script text-2xl text-amber-300">Con amor, Andy</span>
+            <span class="line"></span>
+          </div>
+
+          <p class="result-note">💛 Guardé tu victoria en un lugar especial.</p>
+        </section>
+
+        <!-- ============ PANTALLA 4: Derrota ============ -->
+        <section id="screen-defeat" class="screen">
+          <div class="defeat-aura">💔</div>
+          <p class="game-stamp">Casi...</p>
+          <h2 class="game-title">El boss te venció</h2>
+
+          <p class="victory-message">
+            Pero no te preocupes, Mariela. Caer y volver a intentarlo
+            es lo que hacen los grandes. Y vos, de eso, sabés mucho.
+          </p>
+
+          <button id="btn-retry" type="button" class="game-btn">
+            <span>Intentar de nuevo</span>
+            <span class="text-xl">🔄</span>
+          </button>
+        </section>
+
+      </div>
+    </main>
+
+    <style is:global>
+      .battle-body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: 'Inter', system-ui, sans-serif;
+        color: #FFFCF2;
+        background:
+          radial-gradient(ellipse at 50% 0%, rgba(220, 38, 38, 0.18) 0%, transparent 50%),
+          radial-gradient(ellipse at 50% 100%, rgba(245, 176, 40, 0.18) 0%, transparent 50%),
+          linear-gradient(180deg, #15081F 0%, #2D1B4E 50%, #0F0820 100%);
+        background-attachment: fixed;
+        overflow-x: hidden;
+      }
+
+      .battle-dust {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+      }
+      .dust {
+        position: absolute;
+        width: 3px;
+        height: 3px;
+        background: #FFD466;
+        border-radius: 50%;
+        opacity: 0;
+        box-shadow: 0 0 6px rgba(255, 212, 102, 0.8);
+        animation: floatDust 6s ease-in-out infinite;
+      }
+      @keyframes floatDust {
+        0%, 100% { opacity: 0; transform: translateY(0); }
+        50% { opacity: 0.9; transform: translateY(-30px); }
+      }
+
+      .battle-frame {
+        width: 100%;
+        max-width: 760px;
+        background: linear-gradient(135deg, rgba(45, 27, 78, 0.85) 0%, rgba(26, 15, 46, 0.85) 100%);
+        border: 1px solid rgba(255, 212, 102, 0.35);
+        border-radius: 24px;
+        padding: clamp(20px, 4vw, 36px);
+        box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.7), 0 0 80px rgba(220, 38, 38, 0.15);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        text-align: center;
+        position: relative;
+      }
+
+      .screen { display: none; animation: screenIn 0.5s ease-out; }
+      .screen-active { display: block; }
+      @keyframes screenIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      .font-script { font-family: 'Cormorant Garamond', Georgia, serif; }
+
+      .game-stamp {
+        display: inline-block;
+        padding: 6px 14px;
+        border: 1px dashed rgba(255, 212, 102, 0.4);
+        border-radius: 999px;
+        color: #FFD466;
+        font-size: 11px;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        margin-bottom: 18px;
+      }
+
+      .game-title {
+        font-family: 'Cinzel', serif;
+        font-size: clamp(28px, 5vw, 40px);
+        font-weight: 700;
+        background: linear-gradient(120deg, #FFD466 0%, #F5B028 50%, #FFD466 100%);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        margin: 0 0 16px;
+      }
+
+      .game-subtitle {
+        font-family: 'Cormorant Garamond', serif;
+        font-style: italic;
+        font-size: clamp(15px, 2.4vw, 18px);
+        color: rgba(255, 252, 242, 0.85);
+        line-height: 1.5;
+        margin: 0 0 28px;
+      }
+
+      .game-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px 36px;
+        border-radius: 999px;
+        border: none;
+        background: linear-gradient(135deg, #FFD466 0%, #F5B028 100%);
+        color: #2D1B4E;
+        font-family: 'Cinzel', serif;
+        font-weight: 600;
+        font-size: 15px;
+        cursor: pointer;
+        box-shadow: 0 10px 30px -8px rgba(245, 176, 40, 0.55);
+        transition: transform 0.25s, box-shadow 0.25s;
+      }
+      .game-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 36px -8px rgba(245, 176, 40, 0.7); }
+
+      /* =============== BATTLE =============== */
+      .battle-screen {
+        text-align: left;
+        position: relative;
+      }
+
+      /* Boss */
+      .boss-section { margin-bottom: 18px; }
+      .boss-info { margin-bottom: 12px; }
+      .boss-name-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
+      }
+      .boss-name {
+        font-family: 'Cinzel', serif;
+        font-weight: 600;
+        font-size: 16px;
+        color: #FFFCF2;
+      }
+      .boss-phase {
+        font-size: 10px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        padding: 3px 10px;
+        background: rgba(220, 38, 38, 0.2);
+        border: 1px solid rgba(220, 38, 38, 0.4);
+        border-radius: 999px;
+        color: #FCA5A5;
+      }
+      .boss-phase.is-enraged {
+        background: rgba(220, 38, 38, 0.5);
+        border-color: #DC2626;
+        color: #fff;
+        animation: enragedPulse 0.5s ease-in-out infinite;
+      }
+      @keyframes enragedPulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+      }
+
+      .hp-track {
+        position: relative;
+        height: 18px;
+        background: rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255, 212, 102, 0.2);
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      .hp-fill {
+        height: 100%;
+        border-radius: 999px;
+        transition: width 0.4s ease;
+        position: relative;
+      }
+      .hp-fill::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, transparent 100%);
+      }
+      .boss-hp-fill {
+        width: 100%;
+        background: linear-gradient(90deg, #DC2626 0%, #EF4444 50%, #DC2626 100%);
+        box-shadow: inset 0 0 8px rgba(220, 38, 38, 0.5);
+      }
+      .player-hp-fill {
+        width: 100%;
+        background: linear-gradient(90deg, #16A34A 0%, #4ADE80 50%, #16A34A 100%);
+        box-shadow: inset 0 0 8px rgba(74, 222, 128, 0.5);
+      }
+      .hp-text {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 700;
+        color: #FFFCF2;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+        letter-spacing: 0.05em;
+      }
+
+      /* Boss sprite */
+      .boss-sprite {
+        width: 140px;
+        height: 140px;
+        margin: 12px auto 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
+      .boss-sprite svg {
+        width: 100%;
+        height: 100%;
+        filter: drop-shadow(0 8px 24px rgba(220, 38, 38, 0.4));
+      }
+      .boss-sprite.is-hit { animation: bossHit 0.4s; }
+      @keyframes bossHit {
+        0%, 100% { transform: translateX(0); filter: brightness(1); }
+        25% { transform: translateX(-8px); filter: brightness(2) hue-rotate(-20deg); }
+        75% { transform: translateX(8px); filter: brightness(2) hue-rotate(-20deg); }
+      }
+
+      /* Attack warning */
+      .attack-warning {
+        margin-top: 12px;
+        padding: 10px;
+        background: rgba(220, 38, 38, 0.25);
+        border: 2px solid #DC2626;
+        border-radius: 10px;
+        text-align: center;
+        animation: warningPulse 0.4s ease-in-out infinite;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+      }
+      @keyframes warningPulse {
+        0%, 100% { background: rgba(220, 38, 38, 0.25); }
+        50% { background: rgba(220, 38, 38, 0.5); }
+      }
+      .warning-icon { font-size: 20px; }
+      .warning-text {
+        font-family: 'Cinzel', serif;
+        font-weight: 700;
+        font-size: 13px;
+        color: #FCA5A5;
+        letter-spacing: 0.1em;
+      }
+
+      /* Divisor */
+      .battle-divider {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 18px 0;
+      }
+      .battle-divider .line {
+        flex: 1;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(255, 212, 102, 0.4), transparent);
+      }
+      .vs-icon {
+        font-size: 22px;
+        filter: drop-shadow(0 0 8px rgba(255, 212, 102, 0.6));
+        animation: vsRotate 3s linear infinite;
+      }
+      @keyframes vsRotate {
+        from { transform: rotate(0); }
+        to { transform: rotate(360deg); }
+      }
+
+      /* Player */
+      .player-section {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 16px;
+      }
+      .player-sprite {
+        width: 72px;
+        height: 72px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .player-sprite svg {
+        width: 100%;
+        height: 100%;
+        filter: drop-shadow(0 4px 16px rgba(74, 222, 128, 0.5));
+      }
+      .player-sprite.is-hit { animation: playerHit 0.4s; }
+      @keyframes playerHit {
+        0%, 100% { transform: translateX(0); filter: brightness(1); }
+        25% { transform: translateX(-6px); filter: brightness(2) hue-rotate(20deg); }
+        75% { transform: translateX(6px); filter: brightness(2) hue-rotate(20deg); }
+      }
+      .player-info { flex: 1; }
+      .player-name-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
+      }
+      .player-name {
+        font-family: 'Cinzel', serif;
+        font-weight: 600;
+        font-size: 15px;
+        color: #FFFCF2;
+      }
+      .hearts {
+        display: flex;
+        gap: 4px;
+        font-size: 18px;
+      }
+      .heart.is-lost {
+        opacity: 0.3;
+        filter: grayscale(1);
+      }
+
+      /* Skills */
+      .skills-bar {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 8px;
+        margin-bottom: 14px;
+      }
+      @media (max-width: 480px) {
+        .skills-bar { gap: 6px; }
+      }
+      .skill-btn {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        padding: 10px 8px;
+        background: rgba(255, 252, 242, 0.06);
+        border: 1.5px solid rgba(255, 212, 102, 0.3);
+        border-radius: 12px;
+        color: #FFFCF2;
+        font-family: 'Inter', sans-serif;
+        cursor: pointer;
+        transition: all 0.25s;
+        overflow: hidden;
+      }
+      .skill-btn::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: rgba(220, 38, 38, 0.3);
+        transform-origin: bottom;
+        transform: scaleY(1);
+        transition: transform 0.1s linear;
+        pointer-events: none;
+      }
+      .skill-btn.is-cooling::before {
+        transform: scaleY(0);
+      }
+      .skill-btn:hover:not(:disabled) {
+        background: rgba(245, 176, 40, 0.15);
+        border-color: #FFD466;
+        transform: translateY(-2px);
+      }
+      .skill-btn:disabled {
+        cursor: not-allowed;
+      }
+      .skill-btn .skill-icon { font-size: 22px; position: relative; z-index: 1; }
+      .skill-btn .skill-name {
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        position: relative;
+        z-index: 1;
+      }
+      .skill-btn .skill-cd {
+        font-size: 9px;
+        color: rgba(255, 212, 102, 0.7);
+        position: relative;
+        z-index: 1;
+      }
+      .skill-special { border-color: rgba(245, 101, 101, 0.4); }
+      .skill-dodge { border-color: rgba(96, 165, 250, 0.4); }
+
+      /* Damage log */
+      .damage-log {
+        position: absolute;
+        right: -16px;
+        top: 0;
+        width: 80px;
+        pointer-events: none;
+      }
+      .damage-num {
+        position: absolute;
+        font-family: 'Cinzel', serif;
+        font-weight: 700;
+        font-size: 28px;
+        color: #FFD466;
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+        animation: dmgFloat 1s ease-out forwards;
+        pointer-events: none;
+      }
+      .damage-num.is-crit { color: #FCA5A5; font-size: 36px; }
+      .damage-num.is-heal { color: #4ADE80; }
+      .damage-num.is-block { color: #60A5FA; font-size: 22px; }
+      @keyframes dmgFloat {
+        from { opacity: 1; transform: translateY(0) scale(1); }
+        to { opacity: 0; transform: translateY(-80px) scale(1.3); }
+      }
+
+      /* Screen shake */
+      .battle-frame.is-shaking { animation: shake 0.4s; }
+      @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        20% { transform: translateX(-6px); }
+        40% { transform: translateX(6px); }
+        60% { transform: translateX(-4px); }
+        80% { transform: translateX(4px); }
+      }
+
+      /* Victoria */
+      .victory-aura {
+        font-size: 60px;
+        margin-bottom: 8px;
+        animation: crownFloat 3s ease-in-out infinite;
+        filter: drop-shadow(0 4px 20px rgba(255, 212, 102, 0.7));
+      }
+      .defeat-aura {
+        font-size: 60px;
+        margin-bottom: 8px;
+        filter: drop-shadow(0 4px 20px rgba(220, 38, 38, 0.4));
+      }
+      @keyframes crownFloat {
+        0%, 100% { transform: translateY(0) rotate(-3deg); }
+        50% { transform: translateY(-8px) rotate(3deg); }
+      }
+
+      .victory-stats {
+        background: rgba(255, 252, 242, 0.04);
+        border: 1px solid rgba(255, 212, 102, 0.2);
+        border-radius: 14px;
+        padding: 14px 18px;
+        margin: 18px 0;
+      }
+      .stat-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 0;
+        font-size: 13px;
+        color: rgba(255, 252, 242, 0.85);
+        border-bottom: 1px solid rgba(255, 212, 102, 0.1);
+      }
+      .stat-row:last-child { border-bottom: none; }
+      .stat-label { color: rgba(255, 212, 102, 0.8); font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; }
+      .stat-value {
+        font-family: 'Cinzel', serif;
+        font-weight: 700;
+        color: #FFD466;
+      }
+
+      .victory-message {
+        font-family: 'Cormorant Garamond', serif;
+        font-style: italic;
+        font-size: clamp(15px, 2.4vw, 18px);
+        line-height: 1.65;
+        color: rgba(255, 252, 242, 0.92);
+        margin: 18px 0 22px;
+      }
+
+      .result-footer {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        margin-bottom: 16px;
+      }
+      .result-footer .line {
+        flex: 1;
+        max-width: 60px;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, #FFD466, transparent);
+      }
+      .result-note {
+        font-size: 12px;
+        color: rgba(255, 252, 242, 0.6);
+        font-style: italic;
+        margin: 0;
+      }
+    </style>
+
+    <script>
+      const baseUrl = document.documentElement.dataset.baseUrl || '/mariela/';
+      const workerUrl = 'https://mariela-responses.andyguzman117.workers.dev';
+
+      const state = {
+        bossHP: 200,
+        bossMaxHP: 200,
+        playerHP: 60,
+        playerMaxHP: 60,
+        playerHearts: 3,
+        skillsCooldown: { attack: 0, special: 0, dodge: 0 },
+        skillCooldownMax: { attack: 1, special: 4, dodge: 5 },
+        bossAttackTimer: 3,
+        warningActive: false,
+        dodgeActive: false,
+        totalDamageDealt: 0,
+        attackCount: 0,
+        dodgeCount: 0,
+        status: 'fighting' as 'fighting' | 'victory' | 'defeat',
+        lastFrame: performance.now()
+      };
+
+      const screens = {
+        welcome: document.getElementById('screen-welcome')!,
+        battle: document.getElementById('screen-battle')!,
+        victory: document.getElementById('screen-victory')!,
+        defeat: document.getElementById('screen-defeat')!
+      };
+
+      const showScreen = (name: keyof typeof screens) => {
+        Object.values(screens).forEach((s) => s.classList.remove('screen-active'));
+        screens[name].classList.add('screen-active');
+      };
+
+      // ---------- SVGs ----------
+      const bossSVG = `
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="bossBody" cx="50%" cy="40%">
+              <stop offset="0%" stop-color="#7F1D1D"/>
+              <stop offset="100%" stop-color="#1F0A0A"/>
+            </radialGradient>
+            <radialGradient id="bossEye" cx="50%" cy="50%">
+              <stop offset="0%" stop-color="#FBBF24"/>
+              <stop offset="100%" stop-color="#DC2626"/>
+            </radialGradient>
+          </defs>
+          <!-- Cuerpo -->
+          <ellipse cx="50" cy="60" rx="38" ry="32" fill="url(#bossBody)"/>
+          <!-- Cuernos -->
+          <path d="M 22 35 L 15 15 L 28 28 Z" fill="#1F0A0A" stroke="#7F1D1D" stroke-width="1.5"/>
+          <path d="M 78 35 L 85 15 L 72 28 Z" fill="#1F0A0A" stroke="#7F1D1D" stroke-width="1.5"/>
+          <!-- Ojos brillantes -->
+          <ellipse cx="38" cy="55" rx="6" ry="7" fill="url(#bossEye)"/>
+          <ellipse cx="62" cy="55" rx="6" ry="7" fill="url(#bossEye)"/>
+          <circle cx="38" cy="55" r="2" fill="#000"/>
+          <circle cx="62" cy="55" r="2" fill="#000"/>
+          <!-- Boca -->
+          <path d="M 35 72 Q 50 82, 65 72 L 65 75 Q 50 85, 35 75 Z" fill="#1F0A0A"/>
+          <!-- Dientes -->
+          <path d="M 40 73 L 42 76 L 44 73 Z" fill="#FFFCF2"/>
+          <path d="M 56 73 L 58 76 L 60 73 Z" fill="#FFFCF2"/>
+          <!-- Espinas en espalda -->
+          <path d="M 50 28 L 47 22 L 53 22 Z" fill="#1F0A0A"/>
+          <path d="M 38 30 L 35 25 L 41 25 Z" fill="#1F0A0A"/>
+          <path d="M 62 30 L 59 25 L 65 25 Z" fill="#1F0A0A"/>
+        </svg>
+      `;
+
+      const playerSVG = `
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="playerBody" cx="50%" cy="40%">
+              <stop offset="0%" stop-color="#FEF3C7"/>
+              <stop offset="100%" stop-color="#F59E0B"/>
+            </radialGradient>
+          </defs>
+          <!-- Cuerpo -->
+          <ellipse cx="50" cy="60" rx="32" ry="30" fill="url(#playerBody)" stroke="#D97706" stroke-width="1.5"/>
+          <!-- Cara -->
+          <circle cx="50" cy="48" r="20" fill="#FEF3C7" stroke="#D97706" stroke-width="1.2"/>
+          <!-- Ojos -->
+          <ellipse cx="43" cy="48" rx="2" ry="2.5" fill="#7C2D12"/>
+          <ellipse cx="57" cy="48" rx="2" ry="2.5" fill="#7C2D12"/>
+          <!-- Brillo ojos -->
+          <circle cx="44" cy="47" r="0.6" fill="#FFFCF2"/>
+          <circle cx="58" cy="47" r="0.6" fill="#FFFCF2"/>
+          <!-- Sonrisa -->
+          <path d="M 44 55 Q 50 60, 56 55" stroke="#7C2D12" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+          <!-- Cabello -->
+          <path d="M 30 38 Q 35 25, 50 30 Q 65 25, 70 38 L 68 42 Q 60 35, 50 38 Q 40 35, 32 42 Z" fill="#92400E"/>
+          <!-- Corona -->
+          <path d="M 40 28 L 45 22 L 50 28 L 55 22 L 60 28 L 58 32 L 42 32 Z" fill="#FFD466" stroke="#D97706" stroke-width="0.8"/>
+        </svg>
+      `;
+
+      const bossSprite = document.getElementById('boss-sprite');
+      const playerSprite = document.getElementById('player-sprite');
+      if (bossSprite) bossSprite.innerHTML = bossSVG;
+      if (playerSprite) playerSprite.innerHTML = playerSVG;
+
+      // ---------- Inicio ----------
+      document.getElementById('btn-start')?.addEventListener('click', () => {
+        resetState();
+        showScreen('battle');
+        requestAnimationFrame(gameLoop);
+      });
+
+      document.getElementById('btn-retry')?.addEventListener('click', () => {
+        resetState();
+        showScreen('battle');
+      });
+
+      const resetState = () => {
+        state.bossHP = 200;
+        state.playerHP = 60;
+        state.playerHearts = 3;
+        state.skillsCooldown = { attack: 0, special: 0, dodge: 0 };
+        state.bossAttackTimer = 3;
+        state.warningActive = false;
+        state.dodgeActive = false;
+        state.totalDamageDealt = 0;
+        state.attackCount = 0;
+        state.dodgeCount = 0;
+        state.status = 'fighting';
+        updateHUD();
+      };
+
+      // ---------- Skills ----------
+      document.getElementById('skill-attack')?.addEventListener('click', () => {
+        if (state.status !== 'fighting') return;
+        if (state.skillsCooldown.attack > 0) return;
+        state.skillsCooldown.attack = state.skillCooldownMax.attack;
+        damageBoss(10, false);
+        state.attackCount++;
+      });
+
+      document.getElementById('skill-special')?.addEventListener('click', () => {
+        if (state.status !== 'fighting') return;
+        if (state.skillsCooldown.special > 0) return;
+        state.skillsCooldown.special = state.skillCooldownMax.special;
+        damageBoss(30, true);
+        state.attackCount++;
+      });
+
+      document.getElementById('skill-dodge')?.addEventListener('click', () => {
+        if (state.status !== 'fighting') return;
+        if (state.skillsCooldown.dodge > 0) return;
+        state.skillsCooldown.dodge = state.skillCooldownMax.dodge;
+        state.dodgeActive = true;
+        showDamageLog('🛡️ Bloqueado!', 'block');
+        state.dodgeCount++;
+      });
+
+      // ---------- Lógica del boss ----------
+      const damageBoss = (amount: number, isCrit: boolean) => {
+        state.bossHP = Math.max(0, state.bossHP - amount);
+        state.totalDamageDealt += amount;
+        showDamageLog(`-${amount}`, isCrit ? 'crit' : 'normal', true);
+
+        const sprite = document.getElementById('boss-sprite');
+        sprite?.classList.add('is-hit');
+        setTimeout(() => sprite?.classList.remove('is-hit'), 400);
+
+        shakeFrame();
+        updatePhaseBadge();
+        updateHUD();
+
+        if (state.bossHP <= 0) {
+          state.status = 'victory';
+          setTimeout(showVictory, 800);
+        }
+      };
+
+      const damagePlayer = (amount: number) => {
+        if (state.dodgeActive) {
+          showDamageLog('🛡️ Bloqueado!', 'block');
+          state.dodgeActive = false;
+          return;
+        }
+        state.playerHP = Math.max(0, state.playerHP - amount);
+        state.playerHearts = Math.ceil(state.playerHP / 20);
+        showDamageLog(`-${amount}`, 'normal', false);
+
+        const sprite = document.getElementById('player-sprite');
+        sprite?.classList.add('is-hit');
+        setTimeout(() => sprite?.classList.remove('is-hit'), 400);
+
+        shakeFrame();
+        updateHUD();
+
+        if (state.playerHP <= 0) {
+          state.status = 'defeat';
+          setTimeout(showDefeat, 800);
+        }
+      };
+
+      const getBossInterval = (): number => {
+        const hpRatio = state.bossHP / state.bossMaxHP;
+        if (hpRatio < 0.25) return 1.5;
+        if (hpRatio < 0.5) return 2;
+        return 3;
+      };
+
+      const updatePhaseBadge = () => {
+        const badge = document.getElementById('boss-phase');
+        if (!badge) return;
+        const hpRatio = state.bossHP / state.bossMaxHP;
+        if (hpRatio < 0.25) {
+          badge.textContent = '🔥 Fase 3 - Enraged';
+          badge.classList.add('is-enraged');
+        } else if (hpRatio < 0.5) {
+          badge.textContent = '⚡ Fase 2';
+          badge.classList.remove('is-enraged');
+        } else {
+          badge.textContent = 'Fase 1';
+          badge.classList.remove('is-enraged');
+        }
+      };
+
+      const showDamageLog = (text: string, type: 'normal' | 'crit' | 'block' | 'heal', onBoss = true) => {
+        const log = document.getElementById('damage-log');
+        if (!log) return;
+        const el = document.createElement('div');
+        el.className = `damage-num ${type === 'crit' ? 'is-crit' : ''} ${type === 'block' ? 'is-block' : ''}`;
+        el.textContent = text;
+        const top = onBoss ? 80 + Math.random() * 40 : 280 + Math.random() * 40;
+        el.style.top = `${top}px`;
+        el.style.right = `${10 + Math.random() * 30}px`;
+        log.appendChild(el);
+        setTimeout(() => el.remove(), 1000);
+      };
+
+      const shakeFrame = () => {
+        const frame = document.getElementById('battle-frame');
+        frame?.classList.add('is-shaking');
+        setTimeout(() => frame?.classList.remove('is-shaking'), 400);
+      };
+
+      // ---------- HUD update ----------
+      const updateHUD = () => {
+        const bossFill = document.getElementById('boss-hp-fill') as HTMLElement;
+        const bossText = document.getElementById('boss-hp-text');
+        const playerFill = document.getElementById('player-hp-fill') as HTMLElement;
+        const playerText = document.getElementById('player-hp-text');
+        const hearts = document.getElementById('player-hearts');
+
+        if (bossFill) bossFill.style.width = `${(state.bossHP / state.bossMaxHP) * 100}%`;
+        if (bossText) bossText.textContent = `${state.bossHP} / ${state.bossMaxHP}`;
+        if (playerFill) playerFill.style.width = `${(state.playerHP / state.playerMaxHP) * 100}%`;
+        if (playerText) playerText.textContent = `${state.playerHP} / ${state.playerMaxHP}`;
+        if (hearts) {
+          const heartEls = hearts.querySelectorAll<HTMLElement>('.heart');
+          heartEls.forEach((h, i) => {
+            if (i < state.playerHearts) h.classList.remove('is-lost');
+            else h.classList.add('is-lost');
+          });
+        }
+
+        // Skill cooldowns
+        (['attack', 'special', 'dodge'] as const).forEach((key) => {
+          const btn = document.getElementById(`skill-${key}`);
+          if (!btn) return;
+          if (state.skillsCooldown[key] > 0) {
+            btn.classList.add('is-cooling');
+            btn.setAttribute('disabled', 'true');
+            const cdEl = btn.querySelector('.skill-cd');
+            if (cdEl) cdEl.textContent = `${state.skillsCooldown[key].toFixed(1)}s`;
+          } else {
+            btn.classList.remove('is-cooling');
+            btn.removeAttribute('disabled');
+            const labels: Record<string, string> = { attack: '10 dmg', special: '30 dmg', dodge: 'Bloquea' };
+            const cdEl = btn.querySelector('.skill-cd');
+            if (cdEl) cdEl.textContent = labels[key];
+          }
+        });
+      };
+
+      // ---------- Game loop ----------
+      const gameLoop = (now: number) => {
+        if (state.status !== 'fighting') return;
+        const dt = Math.min(0.1, (now - state.lastFrame) / 1000);
+        state.lastFrame = now;
+
+        // Update cooldowns
+        for (const key of ['attack', 'special', 'dodge'] as const) {
+          state.skillsCooldown[key] = Math.max(0, state.skillsCooldown[key] - dt);
+        }
+
+        // Boss attack timer
+        state.bossAttackTimer -= dt;
+        const warningEl = document.getElementById('attack-warning');
+
+        if (state.bossAttackTimer <= 0) {
+          if (state.warningActive) {
+            // Boss attacks NOW
+            damagePlayer(15);
+            state.warningActive = false;
+            state.bossAttackTimer = getBossInterval();
+            if (warningEl) warningEl.classList.add('hidden');
+          } else {
+            // Show warning
+            state.warningActive = true;
+            state.bossAttackTimer = 1.2; // 1.2 second warning
+            if (warningEl) warningEl.classList.remove('hidden');
+          }
+        }
+
+        updateHUD();
+        requestAnimationFrame(gameLoop);
+      };
+
+      // ---------- Victoria / Derrota ----------
+      const showVictory = () => {
+        const dmgEl = document.getElementById('stat-damage');
+        const attEl = document.getElementById('stat-attacks');
+        const dogEl = document.getElementById('stat-dodges');
+        const hrtEl = document.getElementById('stat-hearts');
+        if (dmgEl) dmgEl.textContent = String(state.totalDamageDealt);
+        if (attEl) attEl.textContent = String(state.attackCount);
+        if (dogEl) dogEl.textContent = String(state.dodgeCount);
+        if (hrtEl) hrtEl.textContent = `${state.playerHearts} / 3`;
+        showScreen('victory');
+        sendToWorker(true);
+      };
+
+      const showDefeat = () => {
+        showScreen('defeat');
+        sendToWorker(false);
+      };
+
+      // ---------- Enviar al Worker ----------
+      const sendToWorker = async (won: boolean) => {
+        try {
+          const formData = new FormData();
+          formData.set('Respuesta', won ? 'Victoria contra Lord Boss' : 'Derrota contra Lord Boss');
+          formData.set(
+            'Mensaje',
+            `Daño: ${state.totalDamageDealt} | Ataques: ${state.attackCount} | Esquivas: ${state.dodgeCount} | Vidas restantes: ${state.playerHearts}/3`
+          );
+          await fetch(workerUrl, {
+            method: 'POST',
+            body: formData,
+            headers: { Accept: 'application/json' }
+          });
+        } catch (err) {
+          console.warn('No se pudo guardar el resultado:', err);
+        }
+      };
+
+      // Init HUD
+      updateHUD();
+    </script>
+  </body>
+</html>
