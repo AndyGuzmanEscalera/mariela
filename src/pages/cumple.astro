@@ -1339,6 +1339,14 @@ const days = [
         const buttons = responseForm.querySelectorAll<HTMLButtonElement>('button[type="submit"]');
         buttons.forEach((b) => (b.disabled = false));
       });
+
+      // Evitar que Enter en el textarea envíe el formulario sin clickear un botón
+      const mensajeTextarea = responseForm?.querySelector<HTMLTextAreaElement>('textarea[name="Mensaje"]');
+      mensajeTextarea?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+          e.preventDefault();
+        }
+      });
     </script>
   </body>
 </html>
