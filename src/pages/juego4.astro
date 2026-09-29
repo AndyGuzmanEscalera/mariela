@@ -50,16 +50,20 @@
           </p>
           <div class="controls-preview">
             <div class="ctrl-item">
+              <span class="ctrl-key">WASD</span>
+              <span class="ctrl-label">Mover</span>
+            </div>
+            <div class="ctrl-item">
+              <span class="ctrl-key">🖱️</span>
+              <span class="ctrl-label">Apuntar</span>
+            </div>
+            <div class="ctrl-item">
               <span class="ctrl-key">CLICK</span>
               <span class="ctrl-label">Disparar</span>
             </div>
             <div class="ctrl-item">
               <span class="ctrl-key">SPACE</span>
               <span class="ctrl-label">Disparar</span>
-            </div>
-            <div class="ctrl-item">
-              <span class="ctrl-key">AUTO</span>
-              <span class="ctrl-label">Caminar</span>
             </div>
           </div>
           <button id="btn-start" type="button" class="game-btn">
@@ -88,7 +92,7 @@
           <div class="canvas-wrap">
             <canvas id="game-canvas" width="720" height="320"></canvas>
             <div class="canvas-instructions">
-              👆 Tocá para disparar
+              ⌨️ WASD para mover · 🖱️ Click para disparar
             </div>
           </div>
 
@@ -483,7 +487,8 @@
       type Projectile = {
         x: number;
         y: number;
-        speed: number;
+        vx: number;
+        vy: number;
       };
 
       type Particle = {
@@ -499,7 +504,11 @@
 
       type GameState = {
         marielaX: number;
+        marielaY: number;
         marielaHP: number;
+        marielaVX: number;
+        marielaVY: number;
+        marielaAngle: number;
         towerHP: number;
         towerMax: number;
         wave: number;
@@ -514,11 +523,19 @@
         status: 'fighting' | 'victory' | 'defeat';
         lastTime: number;
         towerShake: number;
+        mouseX: number;
+        mouseY: number;
       };
 
+      const keys: any = {};
+
       const state: GameState = {
-        marielaX: 30,
+        marielaX: 60,
+        marielaY: GROUND_Y - MARIELA_H,
         marielaHP: 3,
+        marielaVX: 0,
+        marielaVY: 0,
+        marielaAngle: 0,
         towerHP: 100,
         towerMax: 100,
         wave: 1,
@@ -532,11 +549,17 @@
         spawnTimer: 1.5,
         status: 'fighting',
         lastTime: performance.now(),
-        towerShake: 0
+        towerShake: 0,
+        mouseX: W / 2,
+        mouseY: GROUND_Y - MARIELA_H
       };
 
       const resetState = () => {
-        state.marielaX = 30;
+        state.marielaX = 60;
+        state.marielaY = GROUND_Y - MARIELA_H;
+        state.marielaVX = 0;
+        state.marielaVY = 0;
+        state.marielaAngle = 0;
         state.marielaHP = 3;
         state.towerHP = 100;
         state.wave = 1;
@@ -587,23 +610,31 @@
 
       const drawMariela = () => {
         const x = state.marielaX;
-        const y = GROUND_Y - MARIELA_H;
-        const walkFrame = Math.floor(performance.now() / 200) % 2;
+        const y = state.marielaY;
+        const isMoving = Math.abs(state.marielaVX) > 5 || Math.abs(state.marielaVY) > 5;
+        const walkFrame = isMoving ? Math.floor(performance.now() / 150) % 2 : 0;
 
         // Glow
-        const glowGrad = ctx.createRadialGradient(x + MARIELA_W / 2, y + MARIELA_H / 2, 0, x + MARIELA_W / 2, y + MARIELA_H / 2, 50);
+        const cx = x + MARIELA_W / 2;
+        const cy = y + MARIELA_H / 2;
+        const glowGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 55);
         glowGrad.addColorStop(0, 'rgba(255, 212, 102, 0.4)');
         glowGrad.addColorStop(1, 'rgba(255, 212, 102, 0)');
         ctx.fillStyle = glowGrad;
         ctx.fillRect(x - 20, y - 20, MARIELA_W + 40, MARIELA_H + 40);
 
+        // Rotar a Mariela según ángulo de mira
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(state.marielaAngle);
+
         // Body (dress/robe)
         ctx.fillStyle = '#F5B028';
         ctx.beginPath();
-        ctx.moveTo(x + 8, y + 20);
-        ctx.lineTo(x + MARIELA_W - 8, y + 20);
-        ctx.lineTo(x + MARIELA_W - 4, y + MARIELA_H);
-        ctx.lineTo(x + 4, y + MARIELA_H);
+        ctx.moveTo(-MARIELA_W / 2 + 8, -MARIELA_H / 2 + 20);
+        ctx.lineTo(MARIELA_W / 2 - 8, -MARIELA_H / 2 + 20);
+        ctx.lineTo(MARIELA_W / 2 - 4, MARIELA_H / 2);
+        ctx.lineTo(-MARIELA_W / 2 + 4, MARIELA_H / 2);
         ctx.closePath();
         ctx.fill();
         ctx.strokeStyle = '#A56B0E';
@@ -613,7 +644,7 @@
         // Head
         ctx.fillStyle = '#FEF3C7';
         ctx.beginPath();
-        ctx.arc(x + MARIELA_W / 2, y + 16, 12, 0, Math.PI * 2);
+        ctx.arc(0, -MARIELA_H / 2 + 16, 12, 0, Math.PI * 2);
         ctx.fill();
         ctx.strokeStyle = '#D97706';
         ctx.lineWidth = 1.2;
@@ -622,54 +653,91 @@
         // Hair
         ctx.fillStyle = '#92400E';
         ctx.beginPath();
-        ctx.arc(x + MARIELA_W / 2 - 4, y + 8, 9, Math.PI, Math.PI * 2);
+        ctx.arc(-4, -MARIELA_H / 2 + 8, 9, Math.PI, Math.PI * 2);
         ctx.fill();
-        ctx.fillRect(x + MARIELA_W / 2 - 13, y + 8, 5, 12);
+        ctx.fillRect(-13, -MARIELA_H / 2 + 8, 5, 12);
 
         // Crown
         ctx.fillStyle = '#FFD466';
         ctx.beginPath();
-        ctx.moveTo(x + MARIELA_W / 2 - 8, y + 4);
-        ctx.lineTo(x + MARIELA_W / 2 - 5, y - 1);
-        ctx.lineTo(x + MARIELA_W / 2 - 2, y + 4);
-        ctx.lineTo(x + MARIELA_W / 2 + 1, y - 1);
-        ctx.lineTo(x + MARIELA_W / 2 + 4, y + 4);
-        ctx.lineTo(x + MARIELA_W / 2 + 7, y - 1);
-        ctx.lineTo(x + MARIELA_W / 2 + 8, y + 4);
+        ctx.moveTo(-8, -MARIELA_H / 2 + 4);
+        ctx.lineTo(-5, -MARIELA_H / 2 - 1);
+        ctx.lineTo(-2, -MARIELA_H / 2 + 4);
+        ctx.lineTo(1, -MARIELA_H / 2 - 1);
+        ctx.lineTo(4, -MARIELA_H / 2 + 4);
+        ctx.lineTo(7, -MARIELA_H / 2 - 1);
+        ctx.lineTo(8, -MARIELA_H / 2 + 4);
         ctx.closePath();
         ctx.fill();
         ctx.strokeStyle = '#D97706';
         ctx.lineWidth = 0.8;
         ctx.stroke();
 
-        // Bow (drawn pointing right)
-        const bowY = y + 30;
+        // Arco (apunta hacia adelante según rotación)
         ctx.strokeStyle = '#92400E';
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.arc(x + MARIELA_W + 2, bowY, 14, -Math.PI / 2.5, Math.PI / 2.5);
+        ctx.arc(MARIELA_W / 2 + 4, 4, 12, -Math.PI / 3, Math.PI / 3);
         ctx.stroke();
         ctx.strokeStyle = '#FFFCF2';
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.moveTo(x + MARIELA_W + 2, bowY - 14);
-        ctx.lineTo(x + MARIELA_W + 2, bowY + 14);
+        ctx.moveTo(MARIELA_W / 2 + 4, -8);
+        ctx.lineTo(MARIELA_W / 2 + 4, 16);
         ctx.stroke();
 
-        // Legs (simple animated)
+        // Piernas (animadas)
         ctx.fillStyle = '#A56B0E';
         if (walkFrame === 0) {
-          ctx.fillRect(x + 14, y + MARIELA_H - 2, 6, 4);
-          ctx.fillRect(x + 28, y + MARIELA_H - 1, 6, 3);
+          ctx.fillRect(-8, MARIELA_H / 2 - 2, 6, 4);
+          ctx.fillRect(4, MARIELA_H / 2 - 1, 6, 3);
         } else {
-          ctx.fillRect(x + 14, y + MARIELA_H - 1, 6, 3);
-          ctx.fillRect(x + 28, y + MARIELA_H - 2, 6, 4);
+          ctx.fillRect(-8, MARIELA_H / 2 - 1, 6, 3);
+          ctx.fillRect(4, MARIELA_H / 2 - 2, 6, 4);
         }
+
+        ctx.restore();
+      };
+
+      // Indicador de mira
+      const drawAimIndicator = () => {
+        const cx = state.marielaX + MARIELA_W / 2;
+        const cy = state.marielaY + MARIELA_H / 2;
+        const dx = state.mouseX - cx;
+        const dy = state.mouseY - cy;
+        const dist = Math.hypot(dx, dy) || 1;
+
+        // Línea de mira
+        ctx.strokeStyle = 'rgba(255, 212, 102, 0.35)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(cx + (dx / dist) * 35, cy + (dy / dist) * 35);
+        ctx.lineTo(state.mouseX, state.mouseY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Cursor/mira
+        ctx.strokeStyle = '#FFD466';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(state.mouseX, state.mouseY, 12, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(state.mouseX - 16, state.mouseY);
+        ctx.lineTo(state.mouseX - 6, state.mouseY);
+        ctx.moveTo(state.mouseX + 6, state.mouseY);
+        ctx.lineTo(state.mouseX + 16, state.mouseY);
+        ctx.moveTo(state.mouseX, state.mouseY - 16);
+        ctx.lineTo(state.mouseX, state.mouseY - 6);
+        ctx.moveTo(state.mouseX, state.mouseY + 6);
+        ctx.lineTo(state.mouseX, state.mouseY + 16);
+        ctx.stroke();
       };
 
       const drawMinion = (m: Minion) => {
         const x = m.x;
-        const y = GROUND_Y - 30;
+        const y = m.y;
         const isBig = m.type === 'big';
         const w = isBig ? 36 : 26;
         const h = isBig ? 50 : 36;
@@ -792,28 +860,31 @@
       };
 
       const drawProjectile = (p: Projectile) => {
-        // Arrow
+        // Glow
+        ctx.fillStyle = 'rgba(255, 212, 102, 0.25)';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 9, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Arrow head
         ctx.fillStyle = '#FFD466';
         ctx.beginPath();
-        ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
         ctx.fill();
 
         // Trail
-        const trailGrad = ctx.createLinearGradient(p.x - 20, p.y, p.x, p.y);
+        const trailLen = 18;
+        const trailX = p.x - (p.vx / Math.hypot(p.vx, p.vy)) * trailLen;
+        const trailY = p.y - (p.vy / Math.hypot(p.vx, p.vy)) * trailLen;
+        const trailGrad = ctx.createLinearGradient(trailX, trailY, p.x, p.y);
         trailGrad.addColorStop(0, 'rgba(255, 212, 102, 0)');
-        trailGrad.addColorStop(1, 'rgba(255, 212, 102, 0.6)');
+        trailGrad.addColorStop(1, 'rgba(255, 212, 102, 0.7)');
         ctx.strokeStyle = trailGrad;
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 2.5;
         ctx.beginPath();
-        ctx.moveTo(p.x - 20, p.y);
+        ctx.moveTo(trailX, trailY);
         ctx.lineTo(p.x, p.y);
         ctx.stroke();
-
-        // Glow
-        ctx.fillStyle = 'rgba(255, 212, 102, 0.3)';
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 10, 0, Math.PI * 2);
-        ctx.fill();
       };
 
       const drawParticles = () => {
@@ -831,25 +902,44 @@
       // GAME LOGIC
       // ============================================================
 
+      // Carriles: alto / medio / bajo (top-down MOBA style)
+      const lanes = [
+        GROUND_Y - MARIELA_H - 60, // alto
+        GROUND_Y - MARIELA_H - 20, // medio
+        GROUND_Y - MARIELA_H + 20  // bajo
+      ];
+
       const spawnMinion = () => {
         const isBig = state.wave >= 2 && Math.random() < 0.3;
+        const laneY = lanes[Math.floor(Math.random() * lanes.length)] + (Math.random() * 30 - 15);
         state.minions.push({
           x: W + 30,
-          y: 0,
+          y: laneY,
           hp: isBig ? 3 : 1,
-          speed: isBig ? 50 : 70 + state.wave * 8,
+          speed: isBig ? 60 : 80 + state.wave * 8,
           type: isBig ? 'big' : 'small',
           flash: 0
         });
       };
 
       const shoot = () => {
+        if (state.status !== 'fighting') return;
         state.shots++;
+        const cx = state.marielaX + MARIELA_W / 2;
+        const cy = state.marielaY + MARIELA_H / 2;
+        const dx = state.mouseX - cx;
+        const dy = state.mouseY - cy;
+        const dist = Math.hypot(dx, dy) || 1;
+        const speed = 480;
+        const vx = (dx / dist) * speed;
+        const vy = (dy / dist) * speed;
         state.projectiles.push({
-          x: state.marielaX + MARIELA_W + 16,
-          y: GROUND_Y - MARIELA_H + 30,
-          speed: 420
+          x: cx + (dx / dist) * 30,
+          y: cy + (dy / dist) * 30,
+          vx,
+          vy
         });
+        state.marielaAngle = Math.atan2(dy, dx);
       };
 
       const spawnParticles = (x: number, y: number, color: string, count = 8) => {
@@ -912,22 +1002,42 @@
           state.spawnTimer = state.wave === 3 ? 0.8 : 1.2;
         }
 
+        // Mariela movement (WASD/arrows)
+        const speed = 200;
+        state.marielaVX = 0;
+        state.marielaVY = 0;
+        if (keys['ArrowLeft'] || keys['a'] || keys['A']) state.marielaVX -= speed;
+        if (keys['ArrowRight'] || keys['d'] || keys['D']) state.marielaVX += speed;
+        if (keys['ArrowUp'] || keys['w'] || keys['W']) state.marielaVY -= speed;
+        if (keys['ArrowDown'] || keys['s'] || keys['S']) state.marielaVY += speed;
+
+        // Apply movement
+        state.marielaX += state.marielaVX * dt;
+        state.marielaY += state.marielaVY * dt;
+
+        // Bounds
+        if (state.marielaX < 10) state.marielaX = 10;
+        if (state.marielaX > W - MARIELA_W - 10) state.marielaX = W - MARIELA_W - 10;
+        if (state.marielaY < 20) state.marielaY = 20;
+        if (state.marielaY > GROUND_Y - MARIELA_H) state.marielaY = GROUND_Y - MARIELA_H;
+
         // Move minions
         state.minions.forEach((m) => {
           m.x -= m.speed * dt;
           if (m.flash > 0) m.flash -= dt * 4;
         });
 
-        // Move projectiles
+        // Move projectiles (direction-based)
         state.projectiles.forEach((p) => {
-          p.x += p.speed * dt;
+          p.x += p.vx * dt;
+          p.y += p.vy * dt;
         });
 
         // Move particles
         state.particles.forEach((p) => {
           p.x += p.vx * dt;
           p.y += p.vy * dt;
-          p.vy += 200 * dt; // gravity
+          p.vy += 200 * dt;
           p.life -= dt;
         });
 
@@ -937,7 +1047,7 @@
           state.minions = state.minions.filter((m) => {
             const mh = m.type === 'big' ? 50 : 36;
             const mw = m.type === 'big' ? 36 : 26;
-            const my = GROUND_Y - mh;
+            const my = m.y;
             if (rectCollision({ x: p.x - 5, y: p.y - 5, w: 10, h: 10 }, { x: m.x, y: my, w: mw, h: mh }, 10, 10, mw, mh)) {
               m.hp--;
               m.flash = 0.2;
@@ -952,43 +1062,45 @@
             }
             return true;
           });
-          return p.x < W + 20 && !hit;
+          return p.x > -20 && p.x < W + 20 && p.y > -20 && p.y < H + 20 && !hit;
         });
 
         // Collision: minion vs Mariela
         state.minions = state.minions.filter((m) => {
           const mh = m.type === 'big' ? 50 : 36;
           const mw = m.type === 'big' ? 36 : 26;
-          const my = GROUND_Y - mh;
+          const my = m.y;
           const mx = m.x;
           if (
             mx < state.marielaX + MARIELA_W &&
             mx + mw > state.marielaX &&
-            state.marielaX + MARIELA_W < W - TOWER_W - 40
+            my < state.marielaY + MARIELA_H &&
+            my + mh > state.marielaY
           ) {
             state.marielaHP--;
-            spawnParticles(state.marielaX + MARIELA_W / 2, GROUND_Y - MARIELA_H / 2, '#DC2626', 14);
+            spawnParticles(state.marielaX + MARIELA_W / 2, state.marielaY + MARIELA_H / 2, '#DC2626', 14);
             return false;
           }
           return true;
         });
 
-        // Move Mariela forward (auto-walk)
-        const targetX = W - TOWER_W - 60;
-        if (state.marielaX < targetX && state.waveProgress >= cfg.total && state.minions.length === 0) {
-          state.marielaX = Math.min(targetX, state.marielaX + 80 * dt);
-        } else if (state.marielaX < targetX - 100) {
-          // Mariela walks slowly forward during waves
-          state.marielaX = Math.min(targetX - 100, state.marielaX + 30 * dt);
-        }
-
         // Mariela auto-attacks tower when close
-        if (state.marielaX + MARIELA_W >= targetX - 10 && state.wave >= 3 && state.waveProgress >= cfg.total && state.minions.length === 0) {
-          if (Math.random() < dt * 1.5) {
-            state.towerHP = Math.max(0, state.towerHP - 2);
-            state.shake = state.towerShake = 4;
-            state.score += 1;
-            spawnParticles(W - TOWER_W - 30 + TOWER_W / 2, GROUND_Y - TOWER_H / 2, '#EF4444', 4);
+        const towerX = W - TOWER_W - 30;
+        const distToTower = Math.hypot(
+          state.marielaX + MARIELA_W / 2 - (towerX + TOWER_W / 2),
+          state.marielaY + MARIELA_H / 2 - (GROUND_Y - TOWER_H / 2)
+        );
+        if (
+          distToTower < 100 &&
+          state.wave >= 3 &&
+          state.waveProgress >= cfg.total &&
+          state.minions.length === 0 &&
+          state.towerHP > 0
+        ) {
+          if (Math.random() < dt * 2.5) {
+            state.towerHP = Math.max(0, state.towerHP - 1);
+            state.towerShake = 4;
+            spawnParticles(towerX + TOWER_W / 2, GROUND_Y - TOWER_H / 2, '#EF4444', 4);
             updateTowerHUD();
           }
         }
@@ -1025,10 +1137,11 @@
         ctx.clearRect(0, 0, W, H);
         drawBackground();
         drawTower();
-        drawMariela();
         state.minions.forEach(drawMinion);
         state.projectiles.forEach(drawProjectile);
         drawParticles();
+        drawMariela();
+        drawAimIndicator();
       };
 
       const gameLoop = (now: number) => {
@@ -1055,11 +1168,34 @@
         e.preventDefault();
         handleShoot();
       });
+
+      // Mouse tracking para aim
+      canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        state.mouseX = ((e.clientX - rect.left) / rect.width) * W;
+        state.mouseY = ((e.clientY - rect.top) / rect.height) * H;
+      });
+      canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const rect = canvas.getBoundingClientRect();
+        state.mouseX = ((touch.clientX - rect.left) / rect.width) * W;
+        state.mouseY = ((touch.clientY - rect.top) / rect.height) * H;
+      });
+
+      // Teclado: WASD/flechas para mover, SPACE para disparar
       document.addEventListener('keydown', (e) => {
+        const key = e.key;
+        keys[key] = true;
+        keys[e.code] = true;
         if (e.code === 'Space' || e.key === ' ') {
           e.preventDefault();
           handleShoot();
         }
+      });
+      document.addEventListener('keyup', (e) => {
+        keys[e.key] = false;
+        keys[e.code] = false;
       });
 
       // ============================================================
