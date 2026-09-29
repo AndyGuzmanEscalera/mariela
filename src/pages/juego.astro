@@ -1,0 +1,714 @@
+---
+/**
+ * /juego — Mini-juego Mobile Legends para Mariela
+ * ----------------------------------------------------
+ * "Adivina el Héroe" — 5 rondas donde tiene que adivinar
+ * el rol/arquitecto del héroe por emojis. Al final le
+ * pregunta cuál es su heroína favorita y le muestra un
+ * mensaje personalizado. Su elección final se guarda en
+ * el repo de GitHub (vía Worker) para que Andy la vea.
+ */
+---
+
+<!doctype html>
+<html lang="es" data-base-url={import.meta.env.BASE_URL}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5" />
+    <meta name="theme-color" content="#1A0F2E" />
+    <title>Adivina el Héroe · Para Mariela 🎮</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="game-body">
+    <!-- Partículas mágicas de fondo -->
+    <div class="magic-dust" aria-hidden="true">
+      {Array.from({ length: 40 }).map((_, i) => (
+        <span
+          class="dust"
+          style={`top:${Math.random() * 100}%; left:${Math.random() * 100}%; animation-delay:${Math.random() * 5}s; animation-duration:${3 + Math.random() * 4}s;`}
+        ></span>
+      ))}
+    </div>
+
+    <main class="relative z-10 min-h-screen flex items-center justify-center px-4 py-10">
+      <div class="game-frame">
+
+        <!-- ============ PANTALLA 1: Bienvenida ============ -->
+        <section id="screen-welcome" class="screen screen-active">
+          <div class="game-stamp">🎮 Aventura Mobile Legends</div>
+          <h1 class="game-title">Adivina el Héroe</h1>
+          <p class="game-subtitle">
+            5 rondas, una sorpresa final.
+            <br />
+            ¿Lista para la aventura, Mariela?
+          </p>
+          <button id="btn-start" type="button" class="game-btn">
+            <span>Empezar</span>
+            <span class="text-xl">⚔️</span>
+          </button>
+        </section>
+
+        <!-- ============ PANTALLA 2: Juego ============ -->
+        <section id="screen-game" class="screen">
+          <div class="game-progress">
+            <div class="progress-track">
+              <div id="progress-fill" class="progress-fill"></div>
+            </div>
+            <p class="progress-text">
+              Ronda <span id="round-num">1</span> de <span id="round-total">5</span>
+            </p>
+          </div>
+
+          <div class="rune-container">
+            <div class="rune-frame">
+              <p class="rune-label">Esta runa mágica representa al héroe:</p>
+              <div id="rune-emojis" class="rune-emojis">
+                <!-- Emojis insertados por JS -->
+              </div>
+            </div>
+          </div>
+
+          <p class="options-label">¿Qué clase de héroe es?</p>
+          <div id="options-grid" class="options-grid">
+            <!-- Opciones insertadas por JS -->
+          </div>
+
+          <div id="feedback" class="feedback hidden"></div>
+        </section>
+
+        <!-- ============ PANTALLA 3: Pregunta final ============ -->
+        <section id="screen-final" class="screen">
+          <div class="game-stamp">Última pregunta</div>
+          <h2 class="game-title">Y tu heroína favorita es...</h2>
+          <p class="game-subtitle">Elegí la que más te guste. La que más sentís que sos vos.</p>
+
+          <div id="heroine-grid" class="heroine-grid">
+            <!-- Héroínas insertadas por JS -->
+          </div>
+        </section>
+
+        <!-- ============ PANTALLA 4: Resultado ============ -->
+        <section id="screen-result" class="screen">
+          <div class="result-crown">👑</div>
+          <p class="game-stamp">Tu elección</p>
+          <h2 id="result-title" class="game-title"></h2>
+          <p id="result-message" class="result-message"></p>
+
+          <div class="result-footer">
+            <span class="line"></span>
+            <span class="font-script text-2xl text-amber-300">Con amor, Andy</span>
+            <span class="line"></span>
+          </div>
+
+          <p class="result-note">💛 Guardé tu respuesta en un lugar especial.</p>
+        </section>
+
+      </div>
+    </main>
+
+    <style is:global>
+      .game-body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: 'Inter', system-ui, sans-serif;
+        color: #FFFCF2;
+        background:
+          radial-gradient(ellipse at 20% 0%, rgba(245, 176, 40, 0.18) 0%, transparent 55%),
+          radial-gradient(ellipse at 80% 100%, rgba(138, 43, 226, 0.20) 0%, transparent 55%),
+          linear-gradient(180deg, #1A0F2E 0%, #2D1B4E 50%, #0F0820 100%);
+        background-attachment: fixed;
+        overflow-x: hidden;
+      }
+
+      /* Partículas mágicas */
+      .magic-dust {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+      }
+      .dust {
+        position: absolute;
+        width: 3px;
+        height: 3px;
+        background: #FFD466;
+        border-radius: 50%;
+        opacity: 0;
+        box-shadow: 0 0 6px rgba(255, 212, 102, 0.8);
+        animation: floatDust 6s ease-in-out infinite;
+      }
+      @keyframes floatDust {
+        0%, 100% { opacity: 0; transform: translateY(0) scale(0.5); }
+        50% { opacity: 0.9; transform: translateY(-30px) scale(1.4); }
+      }
+
+      /* Frame principal */
+      .game-frame {
+        width: 100%;
+        max-width: 720px;
+        background:
+          linear-gradient(135deg, rgba(45, 27, 78, 0.85) 0%, rgba(26, 15, 46, 0.85) 100%);
+        border: 1px solid rgba(255, 212, 102, 0.35);
+        border-radius: 28px;
+        padding: clamp(28px, 5vw, 52px);
+        box-shadow:
+          0 1px 0 rgba(255, 255, 255, 0.1) inset,
+          0 30px 80px -20px rgba(0, 0, 0, 0.7),
+          0 0 80px rgba(245, 176, 40, 0.15);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        position: relative;
+        text-align: center;
+      }
+      .game-frame::before {
+        content: '';
+        position: absolute;
+        inset: 1px;
+        border-radius: 27px;
+        border: 1px solid rgba(255, 212, 102, 0.15);
+        pointer-events: none;
+      }
+
+      /* Pantallas */
+      .screen {
+        display: none;
+        animation: screenIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .screen-active { display: block; }
+      @keyframes screenIn {
+        from { opacity: 0; transform: translateY(20px) scale(0.98); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+      }
+
+      /* Tipografías */
+      .font-serif { font-family: 'Cinzel', Georgia, serif; }
+      .font-script { font-family: 'Cormorant Garamond', Georgia, serif; }
+
+      .game-stamp {
+        display: inline-block;
+        padding: 6px 14px;
+        border: 1px dashed rgba(255, 212, 102, 0.4);
+        border-radius: 999px;
+        color: #FFD466;
+        font-size: 11px;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        margin-bottom: 18px;
+      }
+
+      .game-title {
+        font-family: 'Cinzel', serif;
+        font-size: clamp(28px, 5vw, 40px);
+        font-weight: 700;
+        background: linear-gradient(120deg, #FFD466 0%, #F5B028 50%, #FFD466 100%);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        margin: 0 0 16px;
+        line-height: 1.15;
+      }
+
+      .game-subtitle {
+        font-family: 'Cormorant Garamond', serif;
+        font-style: italic;
+        font-size: clamp(16px, 2.5vw, 19px);
+        color: rgba(255, 252, 242, 0.85);
+        line-height: 1.5;
+        margin: 0 0 28px;
+      }
+
+      /* Botón principal */
+      .game-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px 36px;
+        border-radius: 999px;
+        border: none;
+        background: linear-gradient(135deg, #FFD466 0%, #F5B028 100%);
+        color: #2D1B4E;
+        font-family: 'Cinzel', serif;
+        font-weight: 600;
+        font-size: 15px;
+        letter-spacing: 0.05em;
+        cursor: pointer;
+        box-shadow: 0 10px 30px -8px rgba(245, 176, 40, 0.55);
+        transition: transform 0.25s, box-shadow 0.25s;
+      }
+      .game-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 14px 36px -8px rgba(245, 176, 40, 0.7);
+      }
+      .game-btn:active { transform: translateY(0) scale(0.98); }
+
+      /* Progreso */
+      .game-progress {
+        margin-bottom: 26px;
+      }
+      .progress-track {
+        height: 6px;
+        background: rgba(255, 252, 242, 0.1);
+        border-radius: 999px;
+        overflow: hidden;
+        margin-bottom: 8px;
+      }
+      .progress-fill {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, #FFD466 0%, #F5B028 100%);
+        border-radius: 999px;
+        transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 0 12px rgba(255, 212, 102, 0.6);
+      }
+      .progress-text {
+        font-size: 11px;
+        letter-spacing: 0.25em;
+        text-transform: uppercase;
+        color: rgba(255, 252, 242, 0.7);
+        margin: 0;
+      }
+      .progress-text span { color: #FFD466; font-weight: 600; }
+
+      /* Runa */
+      .rune-container {
+        margin-bottom: 26px;
+      }
+      .rune-frame {
+        background:
+          radial-gradient(circle at 50% 50%, rgba(245, 176, 40, 0.15) 0%, transparent 70%),
+          rgba(255, 252, 242, 0.04);
+        border: 1px solid rgba(255, 212, 102, 0.25);
+        border-radius: 20px;
+        padding: 30px 24px;
+        position: relative;
+      }
+      .rune-frame::before, .rune-frame::after {
+        content: '✦';
+        position: absolute;
+        top: 12px;
+        color: rgba(255, 212, 102, 0.6);
+        font-size: 12px;
+      }
+      .rune-frame::before { left: 14px; }
+      .rune-frame::after { right: 14px; }
+
+      .rune-label {
+        font-family: 'Cormorant Garamond', serif;
+        font-style: italic;
+        color: rgba(255, 252, 242, 0.75);
+        font-size: 15px;
+        margin: 0 0 14px;
+      }
+      .rune-emojis {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        font-size: clamp(40px, 9vw, 60px);
+        filter: drop-shadow(0 4px 16px rgba(255, 212, 102, 0.4));
+      }
+      .rune-emojis span {
+        animation: runeFloat 3s ease-in-out infinite;
+      }
+      .rune-emojis span:nth-child(2) { animation-delay: 0.3s; }
+      .rune-emojis span:nth-child(3) { animation-delay: 0.6s; }
+      @keyframes runeFloat {
+        0%, 100% { transform: translateY(0) rotate(0deg); }
+        50% { transform: translateY(-6px) rotate(3deg); }
+      }
+
+      /* Opciones */
+      .options-label {
+        font-size: 13px;
+        letter-spacing: 0.25em;
+        text-transform: uppercase;
+        color: rgba(255, 252, 242, 0.7);
+        margin: 0 0 14px;
+      }
+      .options-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      @media (max-width: 480px) {
+        .options-grid { grid-template-columns: 1fr; }
+      }
+
+      .option-btn {
+        padding: 16px 14px;
+        background: rgba(255, 252, 242, 0.06);
+        border: 1.5px solid rgba(255, 212, 102, 0.25);
+        border-radius: 14px;
+        color: #FFFCF2;
+        font-family: 'Inter', sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.25s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+      .option-btn:hover:not(:disabled) {
+        background: rgba(245, 176, 40, 0.15);
+        border-color: rgba(255, 212, 102, 0.6);
+        transform: translateY(-2px);
+      }
+      .option-btn:disabled { cursor: not-allowed; opacity: 0.6; }
+      .option-btn.is-correct {
+        background: linear-gradient(135deg, rgba(74, 222, 128, 0.25) 0%, rgba(34, 197, 94, 0.25) 100%);
+        border-color: #4ADE80;
+        color: #FFFCF2;
+        animation: correctPulse 0.6s ease-out;
+      }
+      .option-btn.is-wrong {
+        background: rgba(239, 68, 68, 0.15);
+        border-color: rgba(239, 68, 68, 0.4);
+      }
+      @keyframes correctPulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); box-shadow: 0 0 20px rgba(74, 222, 128, 0.5); }
+        100% { transform: scale(1); }
+      }
+
+      /* Feedback */
+      .feedback {
+        margin-top: 18px;
+        padding: 12px 16px;
+        border-radius: 12px;
+        font-family: 'Cormorant Garamond', serif;
+        font-style: italic;
+        font-size: 15px;
+        animation: fadeIn 0.4s ease-out;
+      }
+      .feedback.correct {
+        background: rgba(74, 222, 128, 0.15);
+        border: 1px solid rgba(74, 222, 128, 0.3);
+        color: #BBF7D0;
+      }
+      .feedback.wrong {
+        background: rgba(245, 176, 40, 0.15);
+        border: 1px solid rgba(245, 176, 40, 0.3);
+        color: #FFD466;
+      }
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-8px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      /* Héroínas (pregunta final) */
+      .heroine-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        margin-top: 22px;
+      }
+      @media (min-width: 600px) {
+        .heroine-grid { grid-template-columns: repeat(3, 1fr); }
+      }
+      .heroine-btn {
+        padding: 18px 12px;
+        background: rgba(255, 252, 242, 0.05);
+        border: 1.5px solid rgba(255, 212, 102, 0.25);
+        border-radius: 14px;
+        color: #FFFCF2;
+        font-family: 'Cinzel', serif;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.25s;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+      }
+      .heroine-btn:hover {
+        background: rgba(245, 176, 40, 0.15);
+        border-color: #FFD466;
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px -8px rgba(245, 176, 40, 0.6);
+      }
+      .heroine-btn .role {
+        font-size: 11px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: rgba(255, 212, 102, 0.7);
+      }
+
+      /* Resultado */
+      .result-crown {
+        font-size: 60px;
+        margin-bottom: 8px;
+        animation: crownFloat 3s ease-in-out infinite;
+        filter: drop-shadow(0 4px 16px rgba(255, 212, 102, 0.5));
+      }
+      @keyframes crownFloat {
+        0%, 100% { transform: translateY(0) rotate(-3deg); }
+        50% { transform: translateY(-6px) rotate(3deg); }
+      }
+      .result-message {
+        font-family: 'Cormorant Garamond', serif;
+        font-style: italic;
+        font-size: clamp(16px, 2.6vw, 19px);
+        line-height: 1.7;
+        color: rgba(255, 252, 242, 0.92);
+        margin: 18px 0 26px;
+        padding: 0 8px;
+      }
+      .result-footer {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        margin-bottom: 18px;
+      }
+      .result-footer .line {
+        flex: 1;
+        max-width: 60px;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, #FFD466, transparent);
+      }
+      .result-note {
+        font-size: 12px;
+        color: rgba(255, 252, 242, 0.6);
+        font-style: italic;
+        margin: 0;
+      }
+    </style>
+
+    <script>
+      type Round = {
+        emojis: string[];
+        answer: string;
+        options: string[];
+        hint?: string;
+      };
+
+      type Heroine = {
+        name: string;
+        role: string;
+        emoji: string;
+      };
+
+      const rounds: Round[] = [
+        {
+          emojis: ['🛡️', '💪', '⚔️'],
+          answer: 'Tank / Guerrero',
+          options: ['Tank / Guerrero', 'Maga', 'Asesina', 'Soporte'],
+          hint: 'Defiende al equipo y aguanta todo el daño'
+        },
+        {
+          emojis: ['🧙‍♀️', '🔮', '✨'],
+          answer: 'Maga',
+          options: ['Arquera', 'Maga', 'Luchadora', 'Soporte'],
+          hint: 'Lanza hechizos devastadores desde lejos'
+        },
+        {
+          emojis: ['🏹', '🌿', '👁️'],
+          answer: 'Arquera',
+          options: ['Tank / Guerrero', 'Soporte', 'Arquera', 'Maga'],
+          hint: 'Ataca desde lejos con precisión mortal'
+        },
+        {
+          emojis: ['🗡️', '🌙', '⚡'],
+          answer: 'Asesina',
+          options: ['Maga', 'Asesina', 'Tank / Guerrero', 'Arquera'],
+          hint: 'Rápida, letal y aparece de la nada'
+        },
+        {
+          emojis: ['💖', '🌸', '🤲'],
+          answer: 'Soporte',
+          options: ['Soporte', 'Asesina', 'Luchadora', 'Arquera'],
+          hint: 'Cura al equipo y lo hace más fuerte'
+        }
+      ];
+
+      const heroines: Heroine[] = [
+        { name: 'Guinevere', role: 'Maga', emoji: '👸✨' },
+        { name: 'Fanny', role: 'Asesina', emoji: '🗡️💨' },
+        { name: 'Kagura', role: 'Maga', emoji: '🧙‍♀️🔮' },
+        { name: 'Chou', role: 'Luchador', emoji: '🥋⚡' },
+        { name: 'Angela', role: 'Soporte', emoji: '💖🌸' },
+        { name: 'Kimmy', role: 'Tiradora', emoji: '🏹🎯' }
+      ];
+
+      const baseUrl = document.documentElement.dataset.baseUrl || '/mariela/';
+      const workerUrl = 'https://mariela-responses.andyguzman117.workers.dev';
+
+      let currentRound = 0;
+      let score = 0;
+
+      const screens = {
+        welcome: document.getElementById('screen-welcome')!,
+        game: document.getElementById('screen-game')!,
+        final: document.getElementById('screen-final')!,
+        result: document.getElementById('screen-result')!
+      };
+
+      const showScreen = (name: keyof typeof screens) => {
+        Object.values(screens).forEach((s) => s.classList.remove('screen-active'));
+        screens[name].classList.add('screen-active');
+      };
+
+      // ---------- Inicio ----------
+      document.getElementById('btn-start')?.addEventListener('click', () => {
+        currentRound = 0;
+        score = 0;
+        showScreen('game');
+        renderRound();
+      });
+
+      // ---------- Ronda de juego ----------
+      const renderRound = () => {
+        const round = rounds[currentRound];
+        const total = rounds.length;
+
+        const fillEl = document.getElementById('progress-fill')!;
+        const numEl = document.getElementById('round-num')!;
+        const totalEl = document.getElementById('round-total')!;
+        const runeEl = document.getElementById('rune-emojis')!;
+        const gridEl = document.getElementById('options-grid')!;
+        const feedbackEl = document.getElementById('feedback')!;
+
+        if (totalEl) totalEl.textContent = String(total);
+        if (numEl) numEl.textContent = String(currentRound + 1);
+        if (fillEl) (fillEl as HTMLElement).style.width = `${((currentRound) / total) * 100}%`;
+        if (runeEl) runeEl.innerHTML = round.emojis.map((e) => `<span>${e}</span>`).join(' + ');
+        if (feedbackEl) {
+          feedbackEl.classList.add('hidden');
+          feedbackEl.classList.remove('correct', 'wrong');
+          feedbackEl.textContent = '';
+        }
+
+        if (gridEl) {
+          gridEl.innerHTML = round.options
+            .map(
+              (opt) => `
+              <button type="button" class="option-btn" data-value="${opt}">
+                <span>${opt}</span>
+              </button>
+            `
+            )
+            .join('');
+
+          gridEl.querySelectorAll<HTMLButtonElement>('.option-btn').forEach((btn) => {
+            btn.addEventListener('click', () => handleAnswer(btn, round));
+          });
+        }
+      };
+
+      const handleAnswer = (btn: HTMLButtonElement, round: Round) => {
+        const feedbackEl = document.getElementById('feedback')!;
+        const allBtns = document.querySelectorAll<HTMLButtonElement>('.option-btn');
+
+        allBtns.forEach((b) => (b.disabled = true));
+
+        const isCorrect = btn.dataset.value === round.answer;
+
+        if (isCorrect) {
+          score++;
+          btn.classList.add('is-correct');
+          feedbackEl.textContent = `✨ ¡Exacto! ${round.hint ?? ''}`;
+          feedbackEl.classList.add('correct');
+        } else {
+          btn.classList.add('is-wrong');
+          const correctBtn = Array.from(allBtns).find((b) => b.dataset.value === round.answer);
+          if (correctBtn) correctBtn.classList.add('is-correct');
+          feedbackEl.textContent = `😅 Casi... la respuesta era "${round.answer}".`;
+          feedbackEl.classList.add('wrong');
+        }
+        feedbackEl.classList.remove('hidden');
+
+        window.setTimeout(() => {
+          currentRound++;
+          if (currentRound < rounds.length) {
+            renderRound();
+          } else {
+            showScreen('final');
+            renderHeroines();
+            const fillEl = document.getElementById('progress-fill')!;
+            if (fillEl) (fillEl as HTMLElement).style.width = '100%';
+          }
+        }, 1800);
+      };
+
+      // ---------- Héroínas ----------
+      const renderHeroines = () => {
+        const grid = document.getElementById('heroine-grid')!;
+        grid.innerHTML = heroines
+          .map(
+            (h) => `
+            <button type="button" class="heroine-btn" data-name="${h.name}" data-role="${h.role}">
+              <span style="font-size:24px;">${h.emoji.split('')[0]}</span>
+              <span>${h.name}</span>
+              <span class="role">${h.role}</span>
+            </button>
+          `
+          )
+          .join('');
+
+        grid.querySelectorAll<HTMLButtonElement>('.heroine-btn').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const name = btn.dataset.name!;
+            const role = btn.dataset.role!;
+            showResult(name, role);
+          });
+        });
+      };
+
+      // ---------- Resultado ----------
+      const showResult = (name: string, role: string) => {
+        const messages: Record<string, string> = {
+          Guinevere:
+            'Guinevere es elegante, poderosa y tiene un corazón noble. Como vos, Mariela: fuerte por fuera pero suave por dentro. Esa heroína no pelea sola — y yo tampoco quiero estar solo en esto.',
+          Fanny:
+            'Fanny es rápida, arriesgada y hace cosas que nadie más se atreve. Me recuerda a vos: a esa forma que tenés de ir por lo que querés sin importar las dudas.',
+          Kagura:
+            'Kagura es mágica, llena de luz. Como la magia que le pusiste a mi vida desde que llegaste. Gracias por existir.',
+          Chou:
+            'Chou nunca se rinde, aguanta todo lo que le tiren y siempre vuelve más fuerte. Eso sos vos, Mariela. Y es por eso que te admiro tanto.',
+          Angela:
+            'Angela cuida, protege y da todo por los que quiere. Si vos fueras una heroína, sin duda serías Angela: porque el cariño que das no tiene comparación.',
+          Kimmy:
+            'Kimmy es dulce, tierna, pero tiene un poder enorme cuando se lo propone. Como vos: que con esa carita hermosa guardás una fuerza increíble.'
+        };
+
+        const message =
+          messages[name] ||
+          `Elegiste a ${name}. No la conozco mucho, pero si es tu favorita, ya me cae bien. Y ahora la voy a buscar para entender por qué te gusta tanto 💛`;
+
+        const titleEl = document.getElementById('result-title')!;
+        const msgEl = document.getElementById('result-message')!;
+        if (titleEl) titleEl.textContent = `${name}, ${role}`;
+        if (msgEl) msgEl.textContent = message;
+
+        showScreen('result');
+        sendToWorker(name, role, score);
+      };
+
+      // ---------- Enviar al Worker ----------
+      const sendToWorker = async (heroina: string, rol: string, puntaje: number) => {
+        try {
+          const formData = new FormData();
+          formData.set('Respuesta', `Heroína favorita: ${heroina}`);
+          formData.set('Mensaje', `Rol: ${rol} | Puntaje en el juego: ${puntaje}/5`);
+
+          await fetch(workerUrl, {
+            method: 'POST',
+            body: formData,
+            headers: { Accept: 'application/json' }
+          });
+        } catch (err) {
+          console.warn('No se pudo guardar la elección:', err);
+        }
+      };
+    </script>
+  </body>
+</html>
