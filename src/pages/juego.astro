@@ -1,12 +1,14 @@
 ---
 /**
- * /juego — Mini-juego Mobile Legends para Mariela
- * ----------------------------------------------------
- * "Adivina el Héroe" — 5 rondas donde tiene que adivinar
- * el rol/arquitecto del héroe por emojis. Al final le
- * pregunta cuál es su heroína favorita y le muestra un
- * mensaje personalizado. Su elección final se guarda en
- * el repo de GitHub (vía Worker) para que Andy la vea.
+ * /juego — Mini-juego Mobile Legends temático (VERSIÓN ÉPICA)
+ * ------------------------------------------------------------
+ * Ronda 1: "Reconocé los items ML" — 6 preguntas con SVGs
+ *          de objetos del juego (escudo, espada, staff, etc.)
+ * Ronda 2: "Adivina el héroe" — 8 preguntas con emojis
+ * Final: "¿Cuál es tu heroína favorita?"
+ *
+ * Estilo MOBA con colores del juego. Cada respuesta se guarda
+ * en el repo (vía Worker) para que Andy vea qué eligió.
  */
 ---
 
@@ -20,14 +22,13 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
   </head>
   <body class="game-body">
-    <!-- Partículas mágicas de fondo -->
     <div class="magic-dust" aria-hidden="true">
-      {Array.from({ length: 40 }).map((_, i) => (
+      {Array.from({ length: 50 }).map((_, i) => (
         <span
           class="dust"
           style={`top:${Math.random() * 100}%; left:${Math.random() * 100}%; animation-delay:${Math.random() * 5}s; animation-duration:${3 + Math.random() * 4}s;`}
@@ -35,82 +36,116 @@
       ))}
     </div>
 
-    <main class="relative z-10 min-h-screen flex items-center justify-center px-4 py-10">
+    <main class="relative z-10 min-h-screen flex items-center justify-center px-4 py-6">
       <div class="game-frame">
 
-        <!-- ============ PANTALLA 1: Bienvenida ============ -->
+        {/* ============ PANTALLA 1: Bienvenida ============ */}
         <section id="screen-welcome" class="screen screen-active">
-          <div class="game-stamp">🎮 Aventura Mobile Legends</div>
+          <div class="welcome-badge">
+            <span>🎮</span>
+            <span>Mobile Legends Adventure</span>
+          </div>
           <h1 class="game-title">Adivina el Héroe</h1>
           <p class="game-subtitle">
-            5 rondas, una sorpresa final.
+            2 rondas, 14 preguntas y una sorpresa final.
             <br />
             ¿Lista para la aventura, Mariela?
           </p>
+          <div class="round-preview">
+            <div class="round-preview-item">
+              <span class="round-num">R1</span>
+              <span class="round-label">Items ML</span>
+              <span class="round-count">6 preguntas</span>
+            </div>
+            <div class="round-divider-arrow">→</div>
+            <div class="round-preview-item">
+              <span class="round-num">R2</span>
+              <span class="round-label">Héroes</span>
+              <span class="round-count">8 preguntas</span>
+            </div>
+          </div>
           <button id="btn-start" type="button" class="game-btn">
             <span>Empezar</span>
             <span class="text-xl">⚔️</span>
           </button>
         </section>
 
-        <!-- ============ PANTALLA 2: Juego ============ -->
+        {/* ============ PANTALLA 2: Intro de Ronda ============ */}
+        <section id="screen-round-intro" class="screen">
+          <div id="round-intor-badge" class="round-intor-badge">Ronda 1</div>
+          <h2 id="round-intro-title" class="game-title">Reconocé los items</h2>
+          <p id="round-intro-desc" class="game-subtitle">
+            Te voy a mostrar objetos del juego.
+            <br />
+            Decime qué tipo de objeto es.
+          </p>
+          <button id="btn-round-start" type="button" class="game-btn">
+            <span>¡Vamos!</span>
+            <span class="text-xl">🗡️</span>
+          </button>
+        </section>
+
+        {/* ============ PANTALLA 3: Juego ============ */}
         <section id="screen-game" class="screen">
           <div class="game-progress">
+            <div class="progress-info">
+              <span id="round-label" class="round-label-top">Ronda 1</span>
+              <span id="round-counter" class="round-counter">Pregunta 1 / 6</span>
+            </div>
             <div class="progress-track">
               <div id="progress-fill" class="progress-fill"></div>
             </div>
-            <p class="progress-text">
-              Ronda <span id="round-num">1</span> de <span id="round-total">5</span>
-            </p>
           </div>
 
-          <div class="rune-container">
-            <div class="rune-frame">
-              <p class="rune-label">Esta runa mágica representa al héroe:</p>
-              <div id="rune-emojis" class="rune-emojis">
-                <!-- Emojis insertados por JS -->
-              </div>
+          {/* Para Ronda 1: item SVG */}
+          <div id="item-display" class="item-display hidden">
+            <div class="item-frame">
+              <div id="item-svg" class="item-svg"></div>
+              <p class="item-label">¿Qué tipo de objeto es?</p>
             </div>
           </div>
 
-          <p class="options-label">¿Qué clase de héroe es?</p>
-          <div id="options-grid" class="options-grid">
-            <!-- Opciones insertadas por JS -->
+          {/* Para Ronda 2: emojis */}
+          <div id="rune-container" class="rune-container hidden">
+            <div class="rune-frame">
+              <p class="rune-label">Esta runa mágica representa al héroe:</p>
+              <div id="rune-emojis" class="rune-emojis"></div>
+            </div>
           </div>
+
+          <p class="options-label">Elegí una opción</p>
+          <div id="options-grid" class="options-grid"></div>
 
           <div id="feedback" class="feedback hidden"></div>
         </section>
 
-        <!-- ============ PANTALLA 3: Pregunta final ============ -->
+        {/* ============ PANTALLA 4: Pregunta final ============ */}
         <section id="screen-final" class="screen">
           <div class="game-stamp">Última pregunta</div>
           <h2 class="game-title">Y tu heroína favorita es...</h2>
-          <p class="game-subtitle">Elegí la que más te guste. La que más sentís que sos vos.</p>
-
-          <div id="heroine-grid" class="heroine-grid">
-            <!-- Héroínas insertadas por JS -->
-          </div>
+          <p class="game-subtitle">
+            Elegí la que más te guste. La que más sentís que sos vos.
+          </p>
+          <div id="heroine-grid" class="heroine-grid"></div>
         </section>
 
-        <!-- ============ PANTALLA 4: Resultado ============ -->
+        {/* ============ PANTALLA 5: Resultado ============ */}
         <section id="screen-result" class="screen">
           <div class="result-crown">👑</div>
           <p class="game-stamp">Tu elección</p>
           <h2 id="result-title" class="game-title"></h2>
           <p id="result-message" class="result-message"></p>
-
           <div class="result-footer">
             <span class="line"></span>
             <span class="font-script text-2xl text-amber-300">Con amor, Andy</span>
             <span class="line"></span>
           </div>
-
-          <p class="result-note">💛 Guardé tu respuesta en un lugar especial.</p>
-
-          <a
-            href={`${import.meta.env.BASE_URL}juego2`}
-            class="btn-play-game mt-5"
-          >
+          <p class="result-stats">
+            🏆 Puntaje total: <strong id="final-score">0</strong> /
+            <strong id="final-total">14</strong>
+          </p>
+          <p class="result-note">💛 Guardé tu resultado en un lugar especial.</p>
+          <a href={`${import.meta.env.BASE_URL}juego2`} class="btn-play-game mt-5">
             <span class="text-lg">⚔️</span>
             <span>Armar mi equipo ideal</span>
             <span class="text-lg">🏆</span>
@@ -134,17 +169,10 @@
         overflow-x: hidden;
       }
 
-      /* Partículas mágicas */
-      .magic-dust {
-        position: fixed;
-        inset: 0;
-        pointer-events: none;
-        z-index: 0;
-      }
+      .magic-dust { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
       .dust {
         position: absolute;
-        width: 3px;
-        height: 3px;
+        width: 3px; height: 3px;
         background: #FFD466;
         border-radius: 50%;
         opacity: 0;
@@ -156,15 +184,13 @@
         50% { opacity: 0.9; transform: translateY(-30px) scale(1.4); }
       }
 
-      /* Frame principal */
       .game-frame {
         width: 100%;
-        max-width: 720px;
-        background:
-          linear-gradient(135deg, rgba(45, 27, 78, 0.85) 0%, rgba(26, 15, 46, 0.85) 100%);
+        max-width: 760px;
+        background: linear-gradient(135deg, rgba(45, 27, 78, 0.85) 0%, rgba(26, 15, 46, 0.85) 100%);
         border: 1px solid rgba(255, 212, 102, 0.35);
         border-radius: 28px;
-        padding: clamp(28px, 5vw, 52px);
+        padding: clamp(24px, 5vw, 48px);
         box-shadow:
           0 1px 0 rgba(255, 255, 255, 0.1) inset,
           0 30px 80px -20px rgba(0, 0, 0, 0.7),
@@ -174,32 +200,20 @@
         position: relative;
         text-align: center;
       }
-      .game-frame::before {
-        content: '';
-        position: absolute;
-        inset: 1px;
-        border-radius: 27px;
-        border: 1px solid rgba(255, 212, 102, 0.15);
-        pointer-events: none;
-      }
 
-      /* Pantallas */
-      .screen {
-        display: none;
-        animation: screenIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-      }
+      .screen { display: none; animation: screenIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
       .screen-active { display: block; }
       @keyframes screenIn {
         from { opacity: 0; transform: translateY(20px) scale(0.98); }
         to { opacity: 1; transform: translateY(0) scale(1); }
       }
 
-      /* Tipografías */
-      .font-serif { font-family: 'Cinzel', Georgia, serif; }
       .font-script { font-family: 'Cormorant Garamond', Georgia, serif; }
 
-      .game-stamp {
-        display: inline-block;
+      .game-stamp, .welcome-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
         padding: 6px 14px;
         border: 1px dashed rgba(255, 212, 102, 0.4);
         border-radius: 999px;
@@ -221,19 +235,79 @@
         color: transparent;
         margin: 0 0 16px;
         line-height: 1.15;
+        animation: shimmerTitle 3s linear infinite;
+      }
+      @keyframes shimmerTitle {
+        from { background-position: 0% center; }
+        to { background-position: 200% center; }
       }
 
       .game-subtitle {
         font-family: 'Cormorant Garamond', serif;
         font-style: italic;
-        font-size: clamp(16px, 2.5vw, 19px);
+        font-size: clamp(15px, 2.4vw, 18px);
         color: rgba(255, 252, 242, 0.85);
         line-height: 1.5;
         margin: 0 0 28px;
       }
 
-      /* Botón principal */
-      .game-btn {
+      .round-preview {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+      }
+      .round-preview-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        padding: 10px 14px;
+        background: rgba(255, 212, 102, 0.1);
+        border: 1px solid rgba(255, 212, 102, 0.3);
+        border-radius: 12px;
+        min-width: 120px;
+      }
+      .round-num {
+        font-family: 'Cinzel', serif;
+        font-weight: 700;
+        font-size: 16px;
+        color: #FFD466;
+      }
+      .round-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: #FFFCF2;
+      }
+      .round-count {
+        font-size: 10px;
+        color: rgba(255, 252, 242, 0.6);
+        letter-spacing: 0.05em;
+      }
+      .round-divider-arrow {
+        font-size: 28px;
+        color: #FFD466;
+        filter: drop-shadow(0 0 8px rgba(255, 212, 102, 0.6));
+      }
+
+      .round-intor-badge {
+        display: inline-block;
+        padding: 8px 18px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, #FFD466 0%, #F5B028 100%);
+        color: #2D1B4E;
+        font-family: 'Cinzel', serif;
+        font-weight: 700;
+        font-size: 14px;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-bottom: 18px;
+        box-shadow: 0 4px 16px -4px rgba(245, 176, 40, 0.5);
+      }
+
+      .game-btn, .btn-play-game {
         display: inline-flex;
         align-items: center;
         gap: 12px;
@@ -249,23 +323,41 @@
         cursor: pointer;
         box-shadow: 0 10px 30px -8px rgba(245, 176, 40, 0.55);
         transition: transform 0.25s, box-shadow 0.25s;
+        text-decoration: none;
       }
-      .game-btn:hover {
+      .game-btn:hover, .btn-play-game:hover {
         transform: translateY(-2px);
         box-shadow: 0 14px 36px -8px rgba(245, 176, 40, 0.7);
       }
-      .game-btn:active { transform: translateY(0) scale(0.98); }
 
-      /* Progreso */
+      .game-btn { margin-top: 8px; }
+
       .game-progress {
-        margin-bottom: 26px;
+        margin-bottom: 22px;
+      }
+      .progress-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 8px;
+      }
+      .round-label-top {
+        font-family: 'Cinzel', serif;
+        font-weight: 600;
+        font-size: 14px;
+        color: #FFD466;
+      }
+      .round-counter {
+        font-size: 11px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: rgba(255, 252, 242, 0.7);
       }
       .progress-track {
         height: 6px;
         background: rgba(255, 252, 242, 0.1);
         border-radius: 999px;
         overflow: hidden;
-        margin-bottom: 8px;
       }
       .progress-fill {
         height: 100%;
@@ -275,18 +367,62 @@
         transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         box-shadow: 0 0 12px rgba(255, 212, 102, 0.6);
       }
-      .progress-text {
-        font-size: 11px;
-        letter-spacing: 0.25em;
-        text-transform: uppercase;
-        color: rgba(255, 252, 242, 0.7);
-        margin: 0;
-      }
-      .progress-text span { color: #FFD466; font-weight: 600; }
 
-      /* Runa */
+      /* Item display (Ronda 1) */
+      .item-display {
+        margin-bottom: 22px;
+        animation: itemIn 0.5s ease-out;
+      }
+      @keyframes itemIn {
+        from { opacity: 0; transform: scale(0.7) rotate(-10deg); }
+        to { opacity: 1; transform: scale(1) rotate(0deg); }
+      }
+      .item-frame {
+        background:
+          radial-gradient(circle at 50% 50%, rgba(245, 176, 40, 0.18) 0%, transparent 70%),
+          rgba(255, 252, 242, 0.04);
+        border: 2px solid rgba(255, 212, 102, 0.3);
+        border-radius: 20px;
+        padding: 30px 24px;
+        position: relative;
+      }
+      .item-frame::before, .item-frame::after {
+        content: '✦';
+        position: absolute;
+        top: 12px;
+        color: rgba(255, 212, 102, 0.6);
+        font-size: 12px;
+      }
+      .item-frame::before { left: 14px; }
+      .item-frame::after { right: 14px; }
+
+      .item-svg {
+        width: 100px;
+        height: 100px;
+        margin: 0 auto 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        filter: drop-shadow(0 6px 20px rgba(255, 212, 102, 0.4));
+        animation: itemFloat 3s ease-in-out infinite;
+      }
+      .item-svg svg { width: 100%; height: 100%; }
+      @keyframes itemFloat {
+        0%, 100% { transform: translateY(0) rotate(-2deg); }
+        50% { transform: translateY(-8px) rotate(2deg); }
+      }
+      .item-label {
+        font-family: 'Cormorant Garamond', serif;
+        font-style: italic;
+        color: rgba(255, 252, 242, 0.85);
+        font-size: 15px;
+        margin: 0;
+        text-align: center;
+      }
+
+      /* Rune (Ronda 2) */
       .rune-container {
-        margin-bottom: 26px;
+        margin-bottom: 22px;
       }
       .rune-frame {
         background:
@@ -294,8 +430,7 @@
           rgba(255, 252, 242, 0.04);
         border: 1px solid rgba(255, 212, 102, 0.25);
         border-radius: 20px;
-        padding: 30px 24px;
-        position: relative;
+        padding: 28px 24px;
       }
       .rune-frame::before, .rune-frame::after {
         content: '✦';
@@ -306,20 +441,20 @@
       }
       .rune-frame::before { left: 14px; }
       .rune-frame::after { right: 14px; }
-
       .rune-label {
         font-family: 'Cormorant Garamond', serif;
         font-style: italic;
         color: rgba(255, 252, 242, 0.75);
-        font-size: 15px;
-        margin: 0 0 14px;
+        font-size: 14px;
+        margin: 0 0 12px;
+        text-align: center;
       }
       .rune-emojis {
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 14px;
-        font-size: clamp(40px, 9vw, 60px);
+        font-size: clamp(40px, 9vw, 56px);
         filter: drop-shadow(0 4px 16px rgba(255, 212, 102, 0.4));
       }
       .rune-emojis span {
@@ -332,31 +467,31 @@
         50% { transform: translateY(-6px) rotate(3deg); }
       }
 
-      /* Opciones */
       .options-label {
-        font-size: 13px;
+        font-size: 12px;
         letter-spacing: 0.25em;
         text-transform: uppercase;
         color: rgba(255, 252, 242, 0.7);
-        margin: 0 0 14px;
+        margin: 0 0 12px;
       }
       .options-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 12px;
+        gap: 10px;
       }
       @media (max-width: 480px) {
         .options-grid { grid-template-columns: 1fr; }
       }
 
       .option-btn {
-        padding: 16px 14px;
+        position: relative;
+        padding: 14px 12px;
         background: rgba(255, 252, 242, 0.06);
         border: 1.5px solid rgba(255, 212, 102, 0.25);
-        border-radius: 14px;
+        border-radius: 12px;
         color: #FFFCF2;
         font-family: 'Inter', sans-serif;
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 500;
         cursor: pointer;
         transition: all 0.25s;
@@ -364,6 +499,7 @@
         align-items: center;
         justify-content: center;
         gap: 8px;
+        text-align: center;
       }
       .option-btn:hover:not(:disabled) {
         background: rgba(245, 176, 40, 0.15);
@@ -372,29 +508,35 @@
       }
       .option-btn:disabled { cursor: not-allowed; opacity: 0.6; }
       .option-btn.is-correct {
-        background: linear-gradient(135deg, rgba(74, 222, 128, 0.25) 0%, rgba(34, 197, 94, 0.25) 100%);
+        background: linear-gradient(135deg, rgba(74, 222, 128, 0.3) 0%, rgba(34, 197, 94, 0.3) 100%);
         border-color: #4ADE80;
         color: #FFFCF2;
         animation: correctPulse 0.6s ease-out;
       }
       .option-btn.is-wrong {
-        background: rgba(239, 68, 68, 0.15);
-        border-color: rgba(239, 68, 68, 0.4);
+        background: rgba(239, 68, 68, 0.18);
+        border-color: rgba(239, 68, 68, 0.5);
+        animation: wrongShake 0.4s;
       }
       @keyframes correctPulse {
         0% { transform: scale(1); }
-        50% { transform: scale(1.05); box-shadow: 0 0 20px rgba(74, 222, 128, 0.5); }
+        50% { transform: scale(1.06); box-shadow: 0 0 20px rgba(74, 222, 128, 0.5); }
         100% { transform: scale(1); }
       }
+      @keyframes wrongShake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-4px); }
+        75% { transform: translateX(4px); }
+      }
 
-      /* Feedback */
       .feedback {
-        margin-top: 18px;
+        margin-top: 16px;
         padding: 12px 16px;
         border-radius: 12px;
         font-family: 'Cormorant Garamond', serif;
         font-style: italic;
-        font-size: 15px;
+        font-size: 14px;
+        text-align: center;
         animation: fadeIn 0.4s ease-out;
       }
       .feedback.correct {
@@ -412,24 +554,24 @@
         to { opacity: 1; transform: translateY(0); }
       }
 
-      /* Héroínas (pregunta final) */
+      /* Heroínas */
       .heroine-grid {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
+        gap: 10px;
         margin-top: 22px;
       }
       @media (min-width: 600px) {
         .heroine-grid { grid-template-columns: repeat(3, 1fr); }
       }
       .heroine-btn {
-        padding: 18px 12px;
+        padding: 16px 10px;
         background: rgba(255, 252, 242, 0.05);
         border: 1.5px solid rgba(255, 212, 102, 0.25);
         border-radius: 14px;
         color: #FFFCF2;
         font-family: 'Cinzel', serif;
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 500;
         cursor: pointer;
         transition: all 0.25s;
@@ -445,7 +587,7 @@
         box-shadow: 0 8px 20px -8px rgba(245, 176, 40, 0.6);
       }
       .heroine-btn .role {
-        font-size: 11px;
+        font-size: 10px;
         letter-spacing: 0.2em;
         text-transform: uppercase;
         color: rgba(255, 212, 102, 0.7);
@@ -465,18 +607,28 @@
       .result-message {
         font-family: 'Cormorant Garamond', serif;
         font-style: italic;
-        font-size: clamp(16px, 2.6vw, 19px);
-        line-height: 1.7;
+        font-size: clamp(15px, 2.4vw, 18px);
+        line-height: 1.65;
         color: rgba(255, 252, 242, 0.92);
-        margin: 18px 0 26px;
-        padding: 0 8px;
+        margin: 16px 0 8px;
+        padding: 0 6px;
+      }
+      .result-stats {
+        font-family: 'Cinzel', serif;
+        font-size: 14px;
+        color: #FFD466;
+        margin: 10px 0;
+      }
+      .result-stats strong {
+        font-size: 18px;
+        color: #FFFCF2;
       }
       .result-footer {
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 14px;
-        margin-bottom: 18px;
+        margin: 14px 0;
       }
       .result-footer .line {
         flex: 1;
@@ -488,16 +640,113 @@
         font-size: 12px;
         color: rgba(255, 252, 242, 0.6);
         font-style: italic;
-        margin: 0;
+        margin: 0 0 14px;
       }
+      .btn-play-game { margin: 14px auto 0; }
     </style>
 
     <script>
-      type Round = {
+      // =========================================================
+      // SVGs de items ML (estilo MOBA, colores representativos)
+      // =========================================================
+      const itemShield = `
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs><linearGradient id="shieldG" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#60A5FA"/><stop offset="100%" stop-color="#1E40AF"/>
+          </linearGradient></defs>
+          <path d="M 50 12 L 82 22 L 82 55 Q 82 80 50 92 Q 18 80 18 55 L 18 22 Z"
+                fill="url(#shieldG)" stroke="#FFD700" stroke-width="3"/>
+          <path d="M 50 28 L 62 38 L 56 52 L 68 58 L 50 78 L 32 58 L 44 52 L 38 38 Z"
+                fill="#FFD700"/>
+          <circle cx="50" cy="50" r="4" fill="#1E3A8A"/>
+        </svg>
+      `;
+
+      const itemSword = `
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs><linearGradient id="swordG" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#FCA5A5"/><stop offset="100%" stop-color="#B91C1C"/>
+          </linearGradient></defs>
+          <path d="M 28 72 L 50 50 L 72 72 L 80 64 L 50 34 L 20 64 Z"
+                fill="url(#swordG)" stroke="#7F1D1D" stroke-width="2"/>
+          <rect x="46" y="22" width="8" height="14" fill="#FFD700" rx="1"/>
+          <rect x="38" y="18" width="24" height="6" fill="#FFD700" rx="2"/>
+          <circle cx="50" cy="20" r="3" fill="#F59E0B"/>
+        </svg>
+      `;
+
+      const itemStaff = `
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs><radialGradient id="orbG" cx="50%" cy="30%">
+            <stop offset="0%" stop-color="#E9D5FF"/><stop offset="100%" stop-color="#7C3AED"/>
+          </radialGradient></defs>
+          <rect x="47" y="40" width="6" height="50" fill="#4C1D95" rx="2"/>
+          <circle cx="50" cy="32" r="14" fill="url(#orbG)" stroke="#5B21B6" stroke-width="2"/>
+          <circle cx="50" cy="32" r="7" fill="#FAF5FF"/>
+          <path d="M 28 32 L 18 22 M 72 32 L 82 22 M 30 35 L 22 18 M 70 35 L 78 18"
+                stroke="#A78BFA" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="20" cy="22" r="2" fill="#E9D5FF"/>
+          <circle cx="80" cy="22" r="2" fill="#E9D5FF"/>
+          <circle cx="22" cy="18" r="2" fill="#E9D5FF"/>
+          <circle cx="78" cy="18" r="2" fill="#E9D5FF"/>
+        </svg>
+      `;
+
+      const itemBow = `
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs><linearGradient id="bowG" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#86EFAC"/><stop offset="100%" stop-color="#15803D"/>
+          </linearGradient></defs>
+          <path d="M 32 18 Q 76 50 32 82" stroke="url(#bowG)" stroke-width="6" fill="none" stroke-linecap="round"/>
+          <path d="M 32 18 L 32 82" stroke="#BBF7D0" stroke-width="1.5"/>
+          <line x1="20" y1="50" x2="78" y2="46" stroke="#FFFCF2" stroke-width="2"/>
+          <polygon points="78,46 70,44 70,48" fill="#FFFCF2"/>
+          <polygon points="20,50 14,48 14,52" fill="#FFFCF2"/>
+          <circle cx="78" cy="46" r="2" fill="#FCA5A5"/>
+        </svg>
+      `;
+
+      const itemCross = `
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs><radialGradient id="crossG" cx="50%" cy="50%">
+            <stop offset="0%" stop-color="#FBCFE8"/><stop offset="100%" stop-color="#BE185D"/>
+          </radialGradient></defs>
+          <circle cx="50" cy="50" r="36" fill="url(#crossG)" stroke="#9D174D" stroke-width="2"/>
+          <rect x="44" y="22" width="12" height="56" fill="#FFFCF2" rx="2"/>
+          <rect x="22" y="44" width="56" height="12" fill="#FFFCF2" rx="2"/>
+          <circle cx="50" cy="50" r="10" fill="rgba(255,255,255,0.4)"/>
+          <circle cx="38" cy="38" r="2" fill="#FCE7F3"/>
+        </svg>
+      `;
+
+      const itemEmblem = `
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs><radialGradient id="embG" cx="50%" cy="50%">
+            <stop offset="0%" stop-color="#FEF3C7"/><stop offset="100%" stop-color="#D97706"/>
+          </radialGradient></defs>
+          <circle cx="50" cy="50" r="38" fill="url(#embG)" stroke="#92400E" stroke-width="3"/>
+          <circle cx="50" cy="50" r="30" fill="none" stroke="#FFFCF2" stroke-width="1.5" stroke-dasharray="4 2"/>
+          <path d="M 50 25 L 56 42 L 74 42 L 60 52 L 66 70 L 50 60 L 34 70 L 40 52 L 26 42 L 44 42 Z"
+                fill="#FFFCF2" stroke="#92400E" stroke-width="1"/>
+          <circle cx="50" cy="48" r="4" fill="#DC2626"/>
+        </svg>
+      `;
+
+      // =========================================================
+      // Datos de las rondas
+      // =========================================================
+      type ItemQuestion = {
+        svg: string;
+        answer: string;
+        options: string[];
+        hint: string;
+      };
+
+      type HeroQuestion = {
         emojis: string[];
         answer: string;
         options: string[];
-        hint?: string;
+        hint: string;
       };
 
       type Heroine = {
@@ -506,37 +755,70 @@
         emoji: string;
       };
 
-      const rounds: Round[] = [
+      const itemsRound: ItemQuestion[] = [
         {
-          emojis: ['🛡️', '💪', '⚔️'],
-          answer: 'Tank / Guerrero',
-          options: ['Tank / Guerrero', 'Maga', 'Asesina', 'Apoyo'],
-          hint: 'Defiende al equipo y aguanta todo el daño'
+          svg: itemShield,
+          answer: 'Defensa',
+          options: ['Defensa', 'Ataque Físico', 'Magia', 'Curación'],
+          hint: 'Reduce el daño que recibís'
         },
         {
-          emojis: ['🧙‍♀️', '🔮', '✨'],
-          answer: 'Maga',
-          options: ['Arquera', 'Maga', 'Luchadora', 'Apoyo'],
-          hint: 'Lanza hechizos devastadores desde lejos'
+          svg: itemSword,
+          answer: 'Ataque Físico',
+          options: ['Magia', 'Ataque Físico', 'Defensa', 'Velocidad'],
+          hint: 'Causa daño cuerpo a cuerpo'
         },
         {
-          emojis: ['🏹', '🌿', '👁️'],
-          answer: 'Arquera',
-          options: ['Tank / Guerrero', 'Apoyo', 'Arquera', 'Maga'],
-          hint: 'Ataca desde lejos con precisión mortal'
+          svg: itemStaff,
+          answer: 'Magia',
+          options: ['Curación', 'Magia', 'Ataque Físico', 'Defensa'],
+          hint: 'Lanza hechizos devastadores'
         },
         {
-          emojis: ['🗡️', '🌙', '⚡'],
-          answer: 'Asesina',
-          options: ['Maga', 'Asesina', 'Tank / Guerrero', 'Arquera'],
-          hint: 'Rápida, letal y aparece de la nada'
+          svg: itemBow,
+          answer: 'Ataque a Distancia',
+          options: ['Defensa', 'Ataque Físico', 'Ataque a Distancia', 'Curación'],
+          hint: 'Ataca desde lejos con precisión'
         },
         {
-          emojis: ['💖', '🌸', '🤲'],
-          answer: 'Apoyo',
-          options: ['Apoyo', 'Asesina', 'Luchadora', 'Arquera'],
-          hint: 'Cura al equipo y lo hace más fuerte'
+          svg: itemCross,
+          answer: 'Curación',
+          options: ['Magia', 'Defensa', 'Curación', 'Ataque Físico'],
+          hint: 'Restaura la vida de los aliados'
+        },
+        {
+          svg: itemEmblem,
+          answer: 'Emblema',
+          options: ['Emblema', 'Botas', 'Arma', 'Pociones'],
+          hint: 'Poder pasivo que mejora tus stats'
         }
+      ];
+
+      const heroesRound: HeroQuestion[] = [
+        { emojis: ['🛡️', '💪', '⚔️'], answer: 'Tank / Guerrero',
+          options: ['Tank / Guerrero', 'Maga', 'Asesina', 'Apoyo'],
+          hint: 'Defiende al equipo y aguanta todo el daño' },
+        { emojis: ['🧙‍♀️', '🔮', '✨'], answer: 'Maga',
+          options: ['Arquera', 'Maga', 'Luchadora', 'Apoyo'],
+          hint: 'Lanza hechizos devastadores desde lejos' },
+        { emojis: ['🏹', '🌿', '👁️'], answer: 'Arquera',
+          options: ['Tank / Guerrero', 'Apoyo', 'Arquera', 'Maga'],
+          hint: 'Ataca desde lejos con precisión mortal' },
+        { emojis: ['🗡️', '🌙', '⚡'], answer: 'Asesina',
+          options: ['Maga', 'Asesina', 'Tank / Guerrero', 'Arquera'],
+          hint: 'Rápida, letal y aparece de la nada' },
+        { emojis: ['💖', '🌸', '🤲'], answer: 'Apoyo',
+          options: ['Apoyo', 'Asesina', 'Luchadora', 'Arquera'],
+          hint: 'Cura al equipo y lo hace más fuerte' },
+        { emojis: ['🥋', '👊', '🔥'], answer: 'Luchador',
+          options: ['Tank / Guerrero', 'Luchador', 'Maga', 'Apoyo'],
+          hint: 'Cuerpo a cuerpo, no se rinde nunca' },
+        { emojis: ['🎯', '🔫', '💨'], answer: 'Tirador',
+          options: ['Tirador', 'Asesina', 'Luchador', 'Maga'],
+          hint: 'Ataques rápidos desde lejos, daño constante' },
+        { emojis: ['🐉', '🌙', '⚡'], answer: 'Asesina',
+          options: ['Tank / Guerrero', 'Maga', 'Asesina', 'Apoyo'],
+          hint: 'Letal, sigilosa y muy rápida' }
       ];
 
       const heroines: Heroine[] = [
@@ -555,11 +837,17 @@
       const baseUrl = document.documentElement.dataset.baseUrl || '/mariela/';
       const workerUrl = 'https://mariela-responses.andyguzman117.workers.dev';
 
-      let currentRound = 0;
+      // =========================================================
+      // Estado del juego
+      // =========================================================
+      let currentRound = 0; // 0 = round 1, 1 = round 2
+      let questionIndex = 0;
       let score = 0;
+      const totalQuestions = itemsRound.length + heroesRound.length;
 
       const screens = {
         welcome: document.getElementById('screen-welcome')!,
+        roundIntro: document.getElementById('screen-round-intro')!,
         game: document.getElementById('screen-game')!,
         final: document.getElementById('screen-final')!,
         result: document.getElementById('screen-result')!
@@ -573,81 +861,125 @@
       // ---------- Inicio ----------
       document.getElementById('btn-start')?.addEventListener('click', () => {
         currentRound = 0;
+        questionIndex = 0;
         score = 0;
-        showScreen('game');
-        renderRound();
+        showRoundIntro();
       });
 
-      // ---------- Ronda de juego ----------
-      const renderRound = () => {
-        const round = rounds[currentRound];
-        const total = rounds.length;
+      document.getElementById('btn-round-start')?.addEventListener('click', () => {
+        showScreen('game');
+        renderQuestion();
+      });
 
-        const fillEl = document.getElementById('progress-fill')!;
-        const numEl = document.getElementById('round-num')!;
-        const totalEl = document.getElementById('round-total')!;
-        const runeEl = document.getElementById('rune-emojis')!;
-        const gridEl = document.getElementById('options-grid')!;
+      // ---------- Intro de ronda ----------
+      const showRoundIntro = () => {
+        const badge = document.getElementById('round-intor-badge');
+        const title = document.getElementById('round-intro-title');
+        const desc = document.getElementById('round-intro-desc');
+
+        if (currentRound === 0) {
+          if (badge) badge.textContent = 'Ronda 1';
+          if (title) title.textContent = 'Reconocé los items';
+          if (desc) desc.innerHTML = 'Te voy a mostrar objetos del juego.<br/>Decime qué tipo de objeto es.';
+        } else {
+          if (badge) badge.textContent = 'Ronda 2';
+          if (title) title.textContent = 'Adivina el héroe';
+          if (desc) desc.innerHTML = 'Ahora con emojis mágicos.<br/>¿Qué clase de héroe representan?';
+        }
+        showScreen('roundIntro');
+      };
+
+      // ---------- Renderizar pregunta ----------
+      const renderQuestion = () => {
+        const questions = currentRound === 0 ? itemsRound : heroesRound;
+        const q = questions[questionIndex];
+        const total = questions.length;
+        const globalIndex = currentRound * itemsRound.length + questionIndex;
+
+        // Progreso global
+        const fillEl = document.getElementById('progress-fill') as HTMLElement;
+        const roundLabel = document.getElementById('round-label');
+        const roundCounter = document.getElementById('round-counter');
+        if (roundLabel) roundLabel.textContent = `Ronda ${currentRound + 1}`;
+        if (roundCounter) roundCounter.textContent = `Pregunta ${questionIndex + 1} / ${total}`;
+        if (fillEl) fillEl.style.width = `${(globalIndex / totalQuestions) * 100}%`;
+
+        // Mostrar item O emojis según la ronda
+        const itemDisplay = document.getElementById('item-display');
+        const runeContainer = document.getElementById('rune-container');
+        if (currentRound === 0) {
+          itemDisplay?.classList.remove('hidden');
+          runeContainer?.classList.add('hidden');
+          const itemSvg = document.getElementById('item-svg');
+          if (itemSvg) itemSvg.innerHTML = (q as ItemQuestion).svg;
+        } else {
+          itemDisplay?.classList.add('hidden');
+          runeContainer?.classList.remove('hidden');
+          const runeEmojis = document.getElementById('rune-emojis');
+          if (runeEmojis) runeEmojis.innerHTML = (q as HeroQuestion).emojis.map((e) => `<span>${e}</span>`).join(' + ');
+        }
+
+        // Renderizar opciones
+        const grid = document.getElementById('options-grid')!;
         const feedbackEl = document.getElementById('feedback')!;
-
-        if (totalEl) totalEl.textContent = String(total);
-        if (numEl) numEl.textContent = String(currentRound + 1);
-        if (fillEl) (fillEl as HTMLElement).style.width = `${((currentRound) / total) * 100}%`;
-        if (runeEl) runeEl.innerHTML = round.emojis.map((e) => `<span>${e}</span>`).join(' + ');
         if (feedbackEl) {
           feedbackEl.classList.add('hidden');
           feedbackEl.classList.remove('correct', 'wrong');
           feedbackEl.textContent = '';
         }
+        grid.innerHTML = q.options
+          .map(
+            (opt) => `
+            <button type="button" class="option-btn" data-value="${opt}">
+              <span>${opt}</span>
+            </button>
+          `
+          )
+          .join('');
 
-        if (gridEl) {
-          gridEl.innerHTML = round.options
-            .map(
-              (opt) => `
-              <button type="button" class="option-btn" data-value="${opt}">
-                <span>${opt}</span>
-              </button>
-            `
-            )
-            .join('');
-
-          gridEl.querySelectorAll<HTMLButtonElement>('.option-btn').forEach((btn) => {
-            btn.addEventListener('click', () => handleAnswer(btn, round));
-          });
-        }
+        grid.querySelectorAll<HTMLButtonElement>('.option-btn').forEach((btn) => {
+          btn.addEventListener('click', () => handleAnswer(btn, q.answer, q.hint));
+        });
       };
 
-      const handleAnswer = (btn: HTMLButtonElement, round: Round) => {
+      // ---------- Manejar respuesta ----------
+      const handleAnswer = (btn: HTMLButtonElement, answer: string, hint: string) => {
         const feedbackEl = document.getElementById('feedback')!;
         const allBtns = document.querySelectorAll<HTMLButtonElement>('.option-btn');
-
         allBtns.forEach((b) => (b.disabled = true));
 
-        const isCorrect = btn.dataset.value === round.answer;
-
+        const isCorrect = btn.dataset.value === answer;
         if (isCorrect) {
           score++;
           btn.classList.add('is-correct');
-          feedbackEl.textContent = `✨ ¡Exacto! ${round.hint ?? ''}`;
+          feedbackEl.textContent = `✨ ¡Correcto! ${hint}`;
           feedbackEl.classList.add('correct');
         } else {
           btn.classList.add('is-wrong');
-          const correctBtn = Array.from(allBtns).find((b) => b.dataset.value === round.answer);
+          const correctBtn = Array.from(allBtns).find((b) => b.dataset.value === answer);
           if (correctBtn) correctBtn.classList.add('is-correct');
-          feedbackEl.textContent = `😅 Casi... la respuesta era "${round.answer}".`;
+          feedbackEl.textContent = `😅 Casi... era "${answer}".`;
           feedbackEl.classList.add('wrong');
         }
         feedbackEl.classList.remove('hidden');
 
         window.setTimeout(() => {
-          currentRound++;
-          if (currentRound < rounds.length) {
-            renderRound();
+          questionIndex++;
+          const currentQuestions = currentRound === 0 ? itemsRound : heroesRound;
+          if (questionIndex < currentQuestions.length) {
+            renderQuestion();
           } else {
-            showScreen('final');
-            renderHeroines();
-            const fillEl = document.getElementById('progress-fill')!;
-            if (fillEl) (fillEl as HTMLElement).style.width = '100%';
+            // Terminó esta ronda
+            if (currentRound === 0) {
+              currentRound = 1;
+              questionIndex = 0;
+              showRoundIntro();
+            } else {
+              showScreen('final');
+              renderHeroines();
+              const fillEl = document.getElementById('progress-fill') as HTMLElement;
+              if (fillEl) fillEl.style.width = '100%';
+            }
           }
         }, 1800);
       };
@@ -679,55 +1011,45 @@
       // ---------- Resultado ----------
       const showResult = (name: string, role: string) => {
         const messages: Record<string, string> = {
-          Hanabi:
-            'Hanabi lanza sus flechas con una precisión increíble, llena de luz y de poder. Como vos cuando jugás: enfocada, segura, sin que nada la detenga. Esa heroína brilla con cada disparo, igual que vos brillas con cada cosa que hacés.',
-          Miya:
-            'Miya dispara desde lejos con precisión y paciencia. Es de las primeras heroínas del juego, clásica, y vos la elegís porque algo de esa esencia tenés: sos de las que llegan al corazón con calma pero seguro.',
-          Pharsa:
-            'Pharsa vuela sobre el campo de batalla y dispara desde arriba con una vista que nadie más tiene. Me recuerda a vos: esa capacidad de ver todo desde una perspectiva distinta, de elevarte por encima de los problemas y no dejar que nada te derribe.',
-          'Luo Yi':
-            'Luo Yi lee los astros, los símbolos del destino, y guía a su equipo con magia antigua. Como vos: siempre conectada con lo que sentís, con esa intuición que muchas veces no tiene explicación, pero siempre acierta.',
-          Estes:
-            'Estes es de los apoyos más nobles del juego: siempre está para curar, para revivir, para salvar a los suyos. Si alguien cuida así a los demás en la vida real, sos vos. Gracias por ser tan buena con los que te rodean.',
-          Guinevere:
-            'Guinevere es elegante, poderosa y tiene un corazón noble. Como vos, Mariela: fuerte por fuera pero suave por dentro. Esa heroína no pelea sola — y yo tampoco quiero estar solo en esto.',
-          Fanny:
-            'Fanny es rápida, arriesgada y hace cosas que nadie más se atreve. Me recuerda a vos: a esa forma que tenés de ir por lo que querés sin importar las dudas.',
-          Kagura:
-            'Kagura es mágica, llena de luz. Como la magia que le pusiste a mi vida desde que llegaste. Gracias por existir.',
-          Chou:
-            'Chou nunca se rinde, aguanta todo lo que le tiren y siempre vuelve más fuerte. Eso sos vos, Mariela. Y es por eso que te admiro tanto.',
-          Angela:
-            'Angela cuida, protege y da todo por los que quiere. Si vos fueras una heroína, sin duda serías Angela: porque el cariño que das no tiene comparación.'
+          Hanabi: 'Hanabi lanza sus flechas con una precisión increíble, llena de luz y de poder. Como vos cuando jugás: enfocada, segura, sin que nada te detenga.',
+          Miya: 'Miya dispara desde lejos con precisión y paciencia. Clásica y elegante, como la esencia que llevás dentro.',
+          Pharsa: 'Pharsa vuela sobre el campo de batalla con una vista que nadie más tiene. Como vos: siempre viendo las cosas desde otra perspectiva.',
+          'Luo Yi': 'Luo Yi lee los astros y guía con magia antigua. Como vos: siempre conectada con lo que sentís, con esa intuición que no falla.',
+          Estes: 'Estes es de los apoyos más nobles: curar sin esperar nada a cambio. Como vos con los que querés.',
+          Guinevere: 'Guinevere es elegante, poderosa y tiene un corazón noble. Como vos, Mariela: fuerte por fuera, suave por dentro.',
+          Fanny: 'Fanny es rápida, arriesgada y hace cosas que nadie más se atreve. Como vos.',
+          Kagura: 'Kagura es mágica, llena de luz. Como la magia que le pusiste a mi vida.',
+          Chou: 'Chou nunca se rinde, aguanta todo y vuelve más fuerte. Eso sos vos, Mariela.',
+          Angela: 'Angela cuida, protege y da todo por los suyos. Como vos.'
         };
 
-        const message =
-          messages[name] ||
-          `Elegiste a ${name}. No la conozco mucho, pero si es tu favorita, ya me cae bien. Y ahora la voy a buscar para entender por qué te gusta tanto 💛`;
-
-        const titleEl = document.getElementById('result-title')!;
-        const msgEl = document.getElementById('result-message')!;
+        const message = messages[name] || `Elegiste a ${name}. Si es tu favorita, ya me cae bien. 💛`;
+        const titleEl = document.getElementById('result-title');
+        const msgEl = document.getElementById('result-message');
+        const scoreEl = document.getElementById('final-score');
+        const totalEl = document.getElementById('final-total');
         if (titleEl) titleEl.textContent = `${name}, ${role}`;
         if (msgEl) msgEl.textContent = message;
+        if (scoreEl) scoreEl.textContent = String(score);
+        if (totalEl) totalEl.textContent = String(totalQuestions);
 
         showScreen('result');
-        sendToWorker(name, role, score);
+        sendToWorker(name, role);
       };
 
       // ---------- Enviar al Worker ----------
-      const sendToWorker = async (heroina: string, rol: string, puntaje: number) => {
+      const sendToWorker = async (heroina: string, rol: string) => {
         try {
           const formData = new FormData();
           formData.set('Respuesta', `Heroína favorita: ${heroina}`);
-          formData.set('Mensaje', `Rol: ${rol} | Puntaje en el juego: ${puntaje}/5`);
-
+          formData.set('Mensaje', `Rol: ${rol} | Puntaje en el juego: ${score}/${totalQuestions}`);
           await fetch(workerUrl, {
             method: 'POST',
             body: formData,
             headers: { Accept: 'application/json' }
           });
         } catch (err) {
-          console.warn('No se pudo guardar la elección:', err);
+          console.warn('No se pudo guardar:', err);
         }
       };
     </script>
