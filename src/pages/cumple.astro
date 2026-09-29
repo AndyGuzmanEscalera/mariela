@@ -407,8 +407,9 @@ const days = [
               Guardar mi carta 💛
             </button>
             <a
+              id="btn-game-link"
               href={`${import.meta.env.BASE_URL}juego`}
-              class="btn-play-game"
+              class="btn-play-game hidden"
             >
               <span class="text-lg">🎮</span>
               <span>Jugar una sorpresa</span>
@@ -1266,6 +1267,16 @@ const days = [
           revealEmoji.textContent = day.insideEmoji;
           photoFrame.classList.add('hidden');
           revealEmoji.classList.remove('hidden');
+        }
+
+        // El juego solo aparece desde el Miércoles en adelante
+        const gameLink = document.getElementById('btn-game-link');
+        if (gameLink) {
+          if (day.id === 'martes') {
+            gameLink.classList.add('hidden');
+          } else {
+            gameLink.classList.remove('hidden');
+          }
         }
 
         openModal(revealModal);
