@@ -172,13 +172,19 @@
             />
           </div>
 
-          <p class="prize-message">
-            Esto es solo una pequeña parte de todo lo que quiero darte en persona.
-            <br />
-            Los detalles reales — flores, sorpresas, momentos —
-            <br />
-            te los voy a llevar yo, cuando me digas que sí. 💛
-          </p>
+          <div class="prize-story">
+            <h3 class="prize-story-title">🎮 Por los juegos</h3>
+            <p class="prize-story-text">
+              Cuando te conocí, yo ya había dejado los videojuegos. Pero vos me hiciste
+              volver a jugar, me enseñaste a soltar, a disfrutar sin presión.
+              Sos muy buena en esto, y siempre me admiraste por eso.
+              <br /><br />
+              Siempre quise compartir estos momentos de juegos con alguien.
+              Y me alegra muchísimo que seas vos, Mariela.
+              <br /><br />
+              Estos juegos son mi manera de decirte: gracias por traerme de vuelta. 💛
+            </p>
+          </div>
 
           <p class="prize-special-line">
             "Porque cumpliste, te espera un premio sorpresa."
@@ -639,6 +645,33 @@
         background: rgba(255, 212, 102, 0.1);
         border-left: 3px solid #FFD466;
         border-radius: 6px;
+      }
+
+      /* Cuento del premio */
+      .prize-story {
+        background: rgba(255, 252, 242, 0.04);
+        border: 1px solid rgba(168, 85, 247, 0.3);
+        border-radius: 14px;
+        padding: 16px 20px;
+        margin: 20px 0;
+        text-align: left;
+      }
+      .prize-story-title {
+        font-family: 'Cinzel', serif;
+        font-weight: 600;
+        font-size: 14px;
+        color: #F0ABFC;
+        letter-spacing: 0.1em;
+        margin: 0 0 10px;
+        text-align: center;
+      }
+      .prize-story-text {
+        font-family: 'Cormorant Garamond', serif;
+        font-style: italic;
+        font-size: clamp(14px, 2.3vw, 17px);
+        line-height: 1.6;
+        color: rgba(255, 252, 242, 0.9);
+        margin: 0;
       }
     </style>
 
