@@ -198,11 +198,11 @@ const days = [
             <input type="hidden" name="_template" value="table" />
 
             <div class="response-buttons">
-              <button type="submit" name="Respuesta" value="Sí" class="btn-response btn-yes">
+              <button type="button" data-response="Sí" class="btn-response btn-yes">
                 <span class="btn-emoji">💛</span>
                 <span class="btn-label">Sí, te dejo</span>
               </button>
-              <button type="submit" name="Respuesta" value="No" class="btn-response btn-no">
+              <button type="button" data-response="No" class="btn-response btn-no">
                 <span class="btn-emoji">🤍</span>
                 <span class="btn-label">Todavía no</span>
               </button>
@@ -1296,18 +1296,18 @@ const days = [
         responseError.classList.remove('hidden');
       };
 
-      responseForm?.addEventListener('submit', async (e) => {
-        e.preventDefault();
+      // Cada botón clickeado fuerza su valor al formData antes de enviar.
+      const responseButtons = responseForm?.querySelectorAll<HTMLButtonElement>('.btn-response');
 
-        // ⚠️ IMPORTANTE: leer el FormData ANTES de deshabilitar los botones,
-        // porque un botón disabled no incluye su valor.
+      const submitResponse = async (responseValue: string) => {
+        if (!responseForm) return;
+
         const formData = new FormData(responseForm);
-        const clickedValue = formData.get('Respuesta');
-        console.log('Valor enviado:', clickedValue);
+        // Forzamos el valor de la respuesta SI O SÍ
+        formData.set('Respuesta', responseValue);
 
-        // Ahora sí deshabilitar los botones
-        const buttons = responseForm.querySelectorAll<HTMLButtonElement>('button[type="submit"]');
-        buttons.forEach((b) => (b.disabled = true));
+        // Deshabilitar los botones mientras se envía
+        responseForm.querySelectorAll<HTMLButtonElement>('.btn-response').forEach((b) => (b.disabled = true));
 
         try {
           const response = await fetch(responseForm.action, {
@@ -1326,18 +1326,24 @@ const days = [
             throw new Error(`HTTP ${response.status}`);
           }
         } catch (err) {
-          // Si falla, re-habilitar y mostrar error
-          buttons.forEach((b) => (b.disabled = false));
+          responseForm.querySelectorAll<HTMLButtonElement>('.btn-response').forEach((b) => (b.disabled = false));
           showError();
         }
+      };
+
+      responseButtons?.forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const value = btn.dataset.response || '';
+          void submitResponse(value);
+        });
       });
 
       responseRetry?.addEventListener('click', () => {
         if (!responseForm || !responseError) return;
         responseError.classList.add('hidden');
         responseForm.style.display = '';
-        const buttons = responseForm.querySelectorAll<HTMLButtonElement>('button[type="submit"]');
-        buttons.forEach((b) => (b.disabled = false));
+        responseForm.querySelectorAll<HTMLButtonElement>('.btn-response').forEach((b) => (b.disabled = false));
       });
 
       // Evitar que Enter en el textarea envíe el formulario sin clickear un botón
