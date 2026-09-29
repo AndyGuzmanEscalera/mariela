@@ -165,12 +165,12 @@ const days = [
 
           <!-- Mensaje emocional -->
           <div class="question-intro">
-            <p>Mariela,</p>
             <p>Preparé todo esto con mucho cariño. Lo estuve armando durante
-              semanas, pensando en cada detalle, en cada palabra, en cada flor.</p>
-            <p>Me hubiera gustado que las cosas fueran diferentes entre nosotros —
-              poder dártelo en persona, mirándote a los ojos, sin pantallas de por medio.</p>
-            <p>Pero hoy esta página es lo único que tengo para llegar a vos.</p>
+              semanas, pensando en cada detalle y en cada palabra.</p>
+            <p>Me hubiera gustado que las cosas fueran diferentes entre nosotros
+              en este momento para poder hacer diferente.</p>
+            <p>Pero hoy esta página web es lo único que puedo hacer para
+              demostrártelo, realmente me gustaría que sea diferente.</p>
           </div>
 
           <div class="question-divider">
@@ -180,9 +180,9 @@ const days = [
           </div>
 
           <!-- La pregunta -->
-          <h2 class="question-title">¿Me dejas ir a darte un detalle en persona?</h2>
+          <h2 class="question-title">¿Hay algunos detalles que quisiera darte, puedo darte en persona?</h2>
           <p class="question-sub">
-            No quiero hablar de nada. Solo quiero llegar, dártelo y marcharme.
+            No quiero hablar de nada. Solo quiero llegar, dártelo y después me voy.
           </p>
 
           <!-- Formulario de respuesta -->
@@ -216,7 +216,6 @@ const days = [
               ></textarea>
             </details>
 
-            <p class="response-foot">Tu respuesta llega directo a Andy. Sin intermediarios.</p>
           </form>
 
           <!-- Mensaje de gracias (oculto hasta que responda) -->
@@ -304,9 +303,6 @@ const days = [
 
       <!-- ============ FOOTER ============ -->
       <footer class="mt-20 text-center text-amber-100/60 text-sm">
-        <p class="font-display italic">
-          Hecho con 💛 sólo para vos, Mariela — del 29 de septiembre al 4 de octubre.
-        </p>
       </footer>
     </main>
 
@@ -1302,11 +1298,15 @@ const days = [
       responseForm?.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        // Deshabilitar botones mientras se envía
+        // ⚠️ IMPORTANTE: leer el FormData ANTES de deshabilitar los botones,
+        // porque un botón disabled no incluye su valor.
+        const formData = new FormData(responseForm);
+        const clickedValue = formData.get('Respuesta');
+        console.log('Valor enviado:', clickedValue);
+
+        // Ahora sí deshabilitar los botones
         const buttons = responseForm.querySelectorAll<HTMLButtonElement>('button[type="submit"]');
         buttons.forEach((b) => (b.disabled = true));
-
-        const formData = new FormData(responseForm);
 
         try {
           const response = await fetch(responseForm.action, {
