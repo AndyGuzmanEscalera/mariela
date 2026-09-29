@@ -1,0 +1,712 @@
+---
+/**
+ * /juego2 — "Arma tu Equipo Ideal" (Mobile Legends)
+ * ----------------------------------------------------------
+ * Mariela selecciona 5 héroes de un grid de 14 para formar
+ * su equipo soñado (estilo fase de draft). Al final, ve su
+ * lineup con un mensaje personalizado de Andy basado en la
+ * composición de su equipo. La selección se guarda en el
+ * repo (vía Worker) para que Andy la vea.
+ */
+---
+
+<!doctype html>
+<html lang="es" data-base-url={import.meta.env.BASE_URL}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5" />
+    <meta name="theme-color" content="#1A0F2E" />
+    <title>Arma tu Equipo · Para Mariela 🎮</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="game2-body">
+    <!-- Partículas mágicas de fondo -->
+    <div class="magic-dust" aria-hidden="true">
+      {Array.from({ length: 40 }).map((_, i) => (
+        <span
+          class="dust"
+          style={`top:${Math.random() * 100}%; left:${Math.random() * 100}%; animation-delay:${Math.random() * 5}s; animation-duration:${3 + Math.random() * 4}s;`}
+        ></span>
+      ))}
+    </div>
+
+    <main class="relative z-10 min-h-screen flex items-center justify-center px-4 py-10">
+      <div class="game2-frame">
+
+        <!-- ============ PANTALLA 1: Bienvenida ============ -->
+        <section id="screen-welcome" class="screen screen-active">
+          <div class="game-stamp">🎮 Fase de Draft</div>
+          <h1 class="game-title">Arma tu Equipo Ideal</h1>
+          <p class="game-subtitle">
+            Elegí 5 héroes para tu equipo soñado.
+            <br />
+            Como en una partida real, Mariela — pero sin presión.
+          </p>
+          <button id="btn-start" type="button" class="game-btn">
+            <span>Elegir mi equipo</span>
+            <span class="text-xl">⚔️</span>
+          </button>
+        </section>
+
+        <!-- ============ PANTALLA 2: Selección ============ -->
+        <section id="screen-pick" class="screen">
+          <div class="pick-header">
+            <div class="pick-counter">
+              <span class="pick-num" id="pick-count">0</span>
+              <span class="pick-divider">/</span>
+              <span class="pick-total">5</span>
+            </div>
+            <p class="pick-hint">Tocá un héroe para seleccionarlo. Tocá de nuevo para quitarlo.</p>
+          </div>
+
+          <div id="hero-grid" class="hero-grid">
+            <!-- Heroes insertados por JS -->
+          </div>
+
+          <div id="pick-actions" class="pick-actions">
+            <button id="btn-confirm" type="button" class="game-btn-confirm" disabled>
+              <span>Confirmar equipo</span>
+              <span class="text-xl">🏆</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- ============ PANTALLA 3: Resultado ============ -->
+        <section id="screen-result" class="screen">
+          <div class="result-crown">⚔️</div>
+          <p class="game-stamp">Tu equipo soñado</p>
+          <h2 class="game-title">Listo, Mariela</h2>
+
+          <div id="team-display" class="team-display">
+            <!-- Equipo seleccionado -->
+          </div>
+
+          <div class="team-summary">
+            <p class="summary-label">Composición:</p>
+            <div id="team-summary" class="summary-grid">
+              <!-- Roles count -->
+            </div>
+          </div>
+
+          <p id="result-message" class="result-message"></p>
+
+          <div class="result-footer">
+            <span class="line"></span>
+            <span class="font-script text-2xl text-amber-300">Con amor, Andy</span>
+            <span class="line"></span>
+          </div>
+
+          <p class="result-note">💛 Guardé tu equipo en un lugar especial.</p>
+        </section>
+
+      </div>
+    </main>
+
+    <style is:global>
+      .game2-body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: 'Inter', system-ui, sans-serif;
+        color: #FFFCF2;
+        background:
+          radial-gradient(ellipse at 20% 0%, rgba(245, 176, 40, 0.18) 0%, transparent 55%),
+          radial-gradient(ellipse at 80% 100%, rgba(138, 43, 226, 0.20) 0%, transparent 55%),
+          linear-gradient(180deg, #1A0F2E 0%, #2D1B4E 50%, #0F0820 100%);
+        background-attachment: fixed;
+        overflow-x: hidden;
+      }
+
+      /* Partículas mágicas */
+      .magic-dust {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+      }
+      .dust {
+        position: absolute;
+        width: 3px;
+        height: 3px;
+        background: #FFD466;
+        border-radius: 50%;
+        opacity: 0;
+        box-shadow: 0 0 6px rgba(255, 212, 102, 0.8);
+        animation: floatDust 6s ease-in-out infinite;
+      }
+      @keyframes floatDust {
+        0%, 100% { opacity: 0; transform: translateY(0) scale(0.5); }
+        50% { opacity: 0.9; transform: translateY(-30px) scale(1.4); }
+      }
+
+      /* Frame principal */
+      .game2-frame {
+        width: 100%;
+        max-width: 820px;
+        background:
+          linear-gradient(135deg, rgba(45, 27, 78, 0.85) 0%, rgba(26, 15, 46, 0.85) 100%);
+        border: 1px solid rgba(255, 212, 102, 0.35);
+        border-radius: 28px;
+        padding: clamp(24px, 4vw, 44px);
+        box-shadow:
+          0 1px 0 rgba(255, 255, 255, 0.1) inset,
+          0 30px 80px -20px rgba(0, 0, 0, 0.7),
+          0 0 80px rgba(245, 176, 40, 0.15);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        position: relative;
+        text-align: center;
+      }
+      .game2-frame::before {
+        content: '';
+        position: absolute;
+        inset: 1px;
+        border-radius: 27px;
+        border: 1px solid rgba(255, 212, 102, 0.15);
+        pointer-events: none;
+      }
+
+      /* Pantallas */
+      .screen {
+        display: none;
+        animation: screenIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .screen-active { display: block; }
+      @keyframes screenIn {
+        from { opacity: 0; transform: translateY(20px) scale(0.98); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+      }
+
+      /* Tipografías */
+      .font-serif { font-family: 'Cinzel', Georgia, serif; }
+      .font-script { font-family: 'Cormorant Garamond', Georgia, serif; }
+
+      .game-stamp {
+        display: inline-block;
+        padding: 6px 14px;
+        border: 1px dashed rgba(255, 212, 102, 0.4);
+        border-radius: 999px;
+        color: #FFD466;
+        font-size: 11px;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        margin-bottom: 18px;
+      }
+
+      .game-title {
+        font-family: 'Cinzel', serif;
+        font-size: clamp(26px, 5vw, 38px);
+        font-weight: 700;
+        background: linear-gradient(120deg, #FFD466 0%, #F5B028 50%, #FFD466 100%);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        margin: 0 0 16px;
+        line-height: 1.15;
+      }
+
+      .game-subtitle {
+        font-family: 'Cormorant Garamond', serif;
+        font-style: italic;
+        font-size: clamp(15px, 2.4vw, 18px);
+        color: rgba(255, 252, 242, 0.85);
+        line-height: 1.5;
+        margin: 0 0 28px;
+      }
+
+      /* Botón principal */
+      .game-btn, .game-btn-confirm {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px 36px;
+        border-radius: 999px;
+        border: none;
+        background: linear-gradient(135deg, #FFD466 0%, #F5B028 100%);
+        color: #2D1B4E;
+        font-family: 'Cinzel', serif;
+        font-weight: 600;
+        font-size: 15px;
+        letter-spacing: 0.05em;
+        cursor: pointer;
+        box-shadow: 0 10px 30px -8px rgba(245, 176, 40, 0.55);
+        transition: transform 0.25s, box-shadow 0.25s, opacity 0.25s;
+      }
+      .game-btn:hover, .game-btn-confirm:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 14px 36px -8px rgba(245, 176, 40, 0.7);
+      }
+      .game-btn:active, .game-btn-confirm:active:not(:disabled) {
+        transform: translateY(0) scale(0.98);
+      }
+      .game-btn-confirm:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+
+      /* Header de selección */
+      .pick-header {
+        margin-bottom: 22px;
+      }
+      .pick-counter {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 4px;
+        font-family: 'Cinzel', serif;
+        font-weight: 700;
+        margin-bottom: 6px;
+      }
+      .pick-num {
+        font-size: 42px;
+        background: linear-gradient(120deg, #FFD466, #F5B028);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .pick-divider {
+        font-size: 28px;
+        color: rgba(255, 252, 242, 0.5);
+      }
+      .pick-total {
+        font-size: 28px;
+        color: rgba(255, 252, 242, 0.7);
+      }
+      .pick-hint {
+        font-family: 'Cormorant Garamond', serif;
+        font-style: italic;
+        font-size: 14px;
+        color: rgba(255, 252, 242, 0.7);
+        margin: 0;
+      }
+
+      /* Grid de héroes */
+      .hero-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-bottom: 22px;
+      }
+      @media (min-width: 600px) {
+        .hero-grid { grid-template-columns: repeat(4, 1fr); }
+      }
+      @media (min-width: 760px) {
+        .hero-grid { grid-template-columns: repeat(5, 1fr); }
+      }
+
+      .hero-card {
+        background: rgba(255, 252, 242, 0.04);
+        border: 1.5px solid rgba(255, 212, 102, 0.2);
+        border-radius: 14px;
+        padding: 14px 8px;
+        color: #FFFCF2;
+        font-family: 'Inter', sans-serif;
+        cursor: pointer;
+        transition: all 0.25s;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        text-align: center;
+      }
+      .hero-card:hover {
+        background: rgba(245, 176, 40, 0.1);
+        border-color: rgba(255, 212, 102, 0.5);
+        transform: translateY(-2px);
+      }
+      .hero-card.is-selected {
+        background: linear-gradient(135deg, rgba(255, 212, 102, 0.25) 0%, rgba(245, 176, 40, 0.25) 100%);
+        border-color: #FFD466;
+        box-shadow: 0 0 24px -4px rgba(255, 212, 102, 0.6);
+      }
+      .hero-card .hero-emoji {
+        font-size: 30px;
+        filter: drop-shadow(0 2px 6px rgba(255, 212, 102, 0.3));
+      }
+      .hero-card .hero-name {
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+      }
+      .hero-card .hero-role {
+        font-size: 9px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: rgba(255, 212, 102, 0.7);
+      }
+      .hero-card .pick-check {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #FFD466;
+        color: #2D1B4E;
+        font-size: 12px;
+        font-weight: 700;
+        display: none;
+        align-items: center;
+        justify-content: center;
+  position: absolute;
+  top: 6px;
+  right: 6px;
+      }
+      .hero-card { position: relative; }
+      .hero-card.is-selected .pick-check { display: flex; }
+
+      /* Acciones */
+      .pick-actions {
+        text-align: center;
+      }
+
+      /* Resultado: equipo */
+      .result-crown {
+        font-size: 56px;
+        margin-bottom: 8px;
+        animation: crownFloat 3s ease-in-out infinite;
+        filter: drop-shadow(0 4px 16px rgba(255, 212, 102, 0.5));
+      }
+      @keyframes crownFloat {
+        0%, 100% { transform: translateY(0) rotate(-3deg); }
+        50% { transform: translateY(-6px) rotate(3deg); }
+      }
+
+      .team-display {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 8px;
+        margin: 24px 0 20px;
+      }
+      @media (max-width: 500px) {
+        .team-display { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+      }
+      .team-slot {
+        background: rgba(255, 212, 102, 0.1);
+        border: 1.5px solid rgba(255, 212, 102, 0.4);
+        border-radius: 12px;
+        padding: 10px 6px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        animation: slotIn 0.5s ease-out backwards;
+      }
+      .team-slot:nth-child(1) { animation-delay: 0.1s; }
+      .team-slot:nth-child(2) { animation-delay: 0.2s; }
+      .team-slot:nth-child(3) { animation-delay: 0.3s; }
+      .team-slot:nth-child(4) { animation-delay: 0.4s; }
+      .team-slot:nth-child(5) { animation-delay: 0.5s; }
+      @keyframes slotIn {
+        from { opacity: 0; transform: translateY(20px) scale(0.8); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+      }
+      .team-slot .slot-emoji { font-size: 28px; }
+      .team-slot .slot-name {
+        font-size: 11px;
+        font-weight: 600;
+        color: #FFD466;
+      }
+      .team-slot .slot-role {
+        font-size: 8px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: rgba(255, 252, 242, 0.6);
+      }
+
+      .team-summary {
+        background: rgba(255, 252, 242, 0.04);
+        border: 1px solid rgba(255, 212, 102, 0.2);
+        border-radius: 14px;
+        padding: 14px 18px;
+        margin-bottom: 22px;
+        text-align: left;
+      }
+      .summary-label {
+        font-size: 11px;
+        letter-spacing: 0.25em;
+        text-transform: uppercase;
+        color: rgba(255, 212, 102, 0.7);
+        margin: 0 0 8px;
+        text-align: center;
+      }
+      .summary-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+      }
+      .summary-chip {
+        padding: 4px 12px;
+        background: rgba(255, 212, 102, 0.15);
+        border: 1px solid rgba(255, 212, 102, 0.3);
+        border-radius: 999px;
+        font-size: 12px;
+        color: #FFFCF2;
+      }
+      .summary-chip strong { color: #FFD466; }
+
+      .result-message {
+        font-family: 'Cormorant Garamond', serif;
+        font-style: italic;
+        font-size: clamp(15px, 2.4vw, 18px);
+        line-height: 1.65;
+        color: rgba(255, 252, 242, 0.92);
+        margin: 18px 0 22px;
+        padding: 0 6px;
+      }
+      .result-footer {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        margin-bottom: 16px;
+      }
+      .result-footer .line {
+        flex: 1;
+        max-width: 60px;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, #FFD466, transparent);
+      }
+      .result-note {
+        font-size: 12px;
+        color: rgba(255, 252, 242, 0.6);
+        font-style: italic;
+        margin: 0;
+      }
+    </style>
+
+    <script>
+      type Hero = {
+        name: string;
+        role: string;
+        emoji: string;
+        hint: string;
+      };
+
+      const heroes: Hero[] = [
+        { name: 'Hanabi', role: 'Tiradora', emoji: '🏹💥', hint: 'Dispara flechas de luz con precisión mortal' },
+        { name: 'Miya', role: 'Tiradora', emoji: '🌟🏹', hint: 'La clásica, dispara desde lejos con paciencia' },
+        { name: 'Pharsa', role: 'Maga', emoji: '🔥🦅', hint: 'Vuela sobre el campo y ataca desde arriba' },
+        { name: 'Luo Yi', role: 'Maga', emoji: '🌙🧧', hint: 'Lee los astros y guía con magia antigua' },
+        { name: 'Estes', role: 'Apoyo', emoji: '💚🌿', hint: 'Cura y revive al equipo sin parar' },
+        { name: 'Guinevere', role: 'Maga', emoji: '👸✨', hint: 'Elegante, poderosa y de corazón noble' },
+        { name: 'Fanny', role: 'Asesina', emoji: '🗡️💨', hint: 'Rápida, arriesgada, imparable con sus cables' },
+        { name: 'Kagura', role: 'Maga', emoji: '🧙‍♀️🔮', hint: 'Mágica, llena de luz, con su paraguas' },
+        { name: 'Chou', role: 'Luchador', emoji: '🥋⚡', hint: 'Nunca se rinde, aguanta todo y vuelve más fuerte' },
+        { name: 'Angela', role: 'Apoyo', emoji: '💖🌸', hint: 'Cuida, protege y da todo por los suyos' },
+        { name: 'Tigreal', role: 'Tank', emoji: '🛡️👑', hint: 'Defiende al equipo y aguanta todo el daño' },
+        { name: 'Franco', role: 'Tank', emoji: '🔨⚡', hint: 'Lanza ganchos y arrastra enemigos' },
+        { name: 'Lancelot', role: 'Asesina', emoji: '⚔️💫', hint: 'Elegante, rápido y letal con su espada' },
+        { name: 'Eudora', role: 'Maga', emoji: '⚡🌩️', hint: 'Lanza rayos y hechizos devastadores' }
+      ];
+
+      const baseUrl = document.documentElement.dataset.baseUrl || '/mariela/';
+      const workerUrl = 'https://mariela-responses.andyguzman117.workers.dev';
+
+      let selected: Hero[] = [];
+      const MAX_PICKS = 5;
+
+      const screens = {
+        welcome: document.getElementById('screen-welcome')!,
+        pick: document.getElementById('screen-pick')!,
+        result: document.getElementById('screen-result')!
+      };
+
+      const showScreen = (name: keyof typeof screens) => {
+        Object.values(screens).forEach((s) => s.classList.remove('screen-active'));
+        screens[name].classList.add('screen-active');
+      };
+
+      // ---------- Inicio ----------
+      document.getElementById('btn-start')?.addEventListener('click', () => {
+        selected = [];
+        showScreen('pick');
+        renderHeroes();
+      });
+
+      // ---------- Render del grid ----------
+      const renderHeroes = () => {
+        const grid = document.getElementById('hero-grid')!;
+        grid.innerHTML = heroes
+          .map((h) => `
+            <button type="button" class="hero-card" data-name="${h.name}" data-role="${h.role}" aria-label="${h.name}, ${h.role}">
+              <span class="pick-check">✓</span>
+              <span class="hero-emoji">${h.emoji.split('')[0]}</span>
+              <span class="hero-name">${h.name}</span>
+              <span class="hero-role">${h.role}</span>
+            </button>
+          `).join('');
+
+        grid.querySelectorAll<HTMLButtonElement>('.hero-card').forEach((btn) => {
+          btn.addEventListener('click', () => toggleHero(btn));
+        });
+
+        updateCounter();
+      };
+
+      // ---------- Toggle selección ----------
+      const toggleHero = (btn: HTMLElement) => {
+        const name = btn.dataset.name!;
+        const role = btn.dataset.role!;
+        const emoji = btn.querySelector('.hero-emoji')?.textContent ?? '⚔️';
+        const heroData = heroes.find((h) => h.name === name)!;
+
+        const existing = selected.find((h) => h.name === name);
+        if (existing) {
+          selected = selected.filter((h) => h.name !== name);
+          btn.classList.remove('is-selected');
+        } else {
+          if (selected.length >= MAX_PICKS) return;
+          selected.push(heroData);
+          btn.classList.add('is-selected');
+        }
+        updateCounter();
+      };
+
+      const updateCounter = () => {
+        const countEl = document.getElementById('pick-count')!;
+        const confirmBtn = document.getElementById('btn-confirm') as HTMLButtonElement;
+        if (countEl) countEl.textContent = String(selected.length);
+        if (confirmBtn) confirmBtn.disabled = selected.length !== MAX_PICKS;
+      };
+
+      // ---------- Confirmar ----------
+      document.getElementById('btn-confirm')?.addEventListener('click', () => {
+        if (selected.length !== MAX_PICKS) return;
+        showResult();
+      });
+
+      // ---------- Resultado ----------
+      const showResult = () => {
+        const teamDisplay = document.getElementById('team-display')!;
+        teamDisplay.innerHTML = selected
+          .map(
+            (h) => `
+            <div class="team-slot">
+              <span class="slot-emoji">${h.emoji.split('')[0]}</span>
+              <span class="slot-name">${h.name}</span>
+              <span class="slot-role">${h.role}</span>
+            </div>
+          `
+          )
+          .join('');
+
+        // Resumen por rol
+        const roleCounts: Record<string, number> = {};
+        selected.forEach((h) => {
+          roleCounts[h.role] = (roleCounts[h.role] || 0) + 1;
+        });
+
+        const summaryEl = document.getElementById('team-summary')!;
+        summaryEl.innerHTML = Object.entries(roleCounts)
+          .map(([role, count]) => `<span class="summary-chip"><strong>${count}</strong> ${role}${count > 1 ? 's' : ''}</span>`)
+          .join('');
+
+        // Mensaje personalizado basado en composición
+        const message = generateTeamMessage(selected, roleCounts);
+        const msgEl = document.getElementById('result-message')!;
+        if (msgEl) msgEl.textContent = message;
+
+        showScreen('result');
+        sendToWorker(selected, roleCounts);
+      };
+
+      // ---------- Generación del mensaje ----------
+      const generateTeamMessage = (team: Hero[], counts: Record<string, number>): string => {
+        const names = team.map((h) => h.name);
+        const hasHanabi = names.includes('Hanabi');
+        const hasMiya = names.includes('Miya');
+        const hasEstes = names.includes('Estes');
+        const hasAngela = names.includes('Angela');
+        const hasTigreal = names.includes('Tigreal');
+        const hasFranco = names.includes('Franco');
+        const hasChou = names.includes('Chou');
+        const hasFanny = names.includes('Fanny');
+        const hasLancelot = names.includes('Lancelot');
+        const hasPharsa = names.includes('Pharsa');
+        const hasLuoYi = names.includes('Luo Yi');
+        const tanks = (counts['Tank'] || 0);
+        const supports = (counts['Apoyo'] || 0);
+        const marksmen = (counts['Tiradora'] || 0);
+        const mages = (counts['Maga'] || 0);
+        const assassins = (counts['Asesina'] || 0);
+        const fighters = (counts['Luchador'] || 0);
+
+        // Apertura por las favoritas
+        let opening = '';
+        if (hasHanabi && hasMiya) {
+          opening = 'Tu equipo arranca con tus dos favoritas, Hanabi y Miya — directo al corazón. ';
+        } else if (hasHanabi) {
+          opening = 'Arrancaste con Hanabi, tu heroína del corazón. ';
+        } else if (hasMiya) {
+          opening = 'Arrancaste con Miya, la clásica. ';
+        } else {
+          opening = 'Tu equipo está lleno de sorpresas. ';
+        }
+
+        // Análisis de composición
+        let analysis = '';
+        if (tanks >= 2) {
+          analysis = 'Tanques como Tigreal o Franco significan que te gusta la defensa sólida: proteger primero, atacar después. Como yo contigo, Mariela — siempre cuidándote.';
+        } else if (supports >= 2) {
+          analysis = 'Llevás mucho apoyo en el equipo. Eso dice mucho de vos: te importa más mantener a tu equipo vivo que buscar la gloria个人的. Como en la vida real — siempre cuidando a los que querés.';
+        } else if (marksmen >= 2) {
+          analysis = 'Daño físico pesado desde lejos. Tu equipo apuesta a la precisión y la paciencia: disparar limpio desde la retaguardia. Me encanta esa decisión.';
+        } else if (mages >= 3) {
+          analysis = 'Pura magia. Tu equipo explota desde lejos con hechizos devastadores. Sos de las que prefieren el control y el daño a distancia, no el cuerpo a cuerpo.';
+        } else if (assassins >= 2) {
+          analysis = 'Equipo agresivo y rápido. Asesinos como Fanny o Lancelot son para los que quieren acabar la partida YA, sin titubear.';
+        } else if (fighters >= 1) {
+          analysis = 'Chou cuerpo a cuerpo siempre es sinónimo de "no me rindo". Tu equipo tiene garra.';
+        } else {
+          analysis = 'Tu equipo tiene un balance interesante — sin extremos. Estrategia pura.';
+        }
+
+        // Cierre personal
+        let closer = '';
+        if (hasEstes && hasAngela) {
+          closer = ' Y tenés a Estes Y Angela: doble apoyo. Eso es muy de vos — nunca dejás sola a la gente que querés. 💛';
+        } else if (hasEstes) {
+          closer = ' Estes es el héroe más noble del juego: curar sin esperar nada a cambio. Como vos conmigo — gracias por sanarme siempre. 💛';
+        } else if (hasAngela) {
+          closer = ' Angela cuida con todo el corazón, igual que vos. 💛';
+        } else if (hasPharsa) {
+          closer = ' Pharsa ve todo desde arriba, como yo intento verte a vos desde lejos. 💛';
+        } else if (hasLuoYi) {
+          closer = ' Luo Yi lee el destino. Yo no leo las estrellas, pero algo me dice que todavía hay capítulos para nosotros. 💛';
+        } else {
+          closer = ' Gracias por jugar este juego conmigo — significa mucho que estés acá. 💛';
+        }
+
+        return opening + analysis + closer;
+      };
+
+      // ---------- Enviar al Worker ----------
+      const sendToWorker = async (team: Hero[], counts: Record<string, number>) => {
+        try {
+          const teamList = team.map((h) => h.name).join(', ');
+          const summary = Object.entries(counts)
+            .map(([role, count]) => `${count} ${role}`)
+            .join(', ');
+
+          const formData = new FormData();
+          formData.set('Respuesta', `Juego 2 - Equipo: ${teamList}`);
+          formData.set('Mensaje', `Composición: ${summary}`);
+
+          await fetch(workerUrl, {
+            method: 'POST',
+            body: formData,
+            headers: { Accept: 'application/json' }
+          });
+        } catch (err) {
+          console.warn('No se pudo guardar el equipo:', err);
+        }
+      };
+    </script>
+  </body>
+</html>
