@@ -124,7 +124,7 @@
           <div class="game-stamp">Última pregunta</div>
           <h2 class="game-title">Y tu heroína favorita es...</h2>
           <p class="game-subtitle">
-            Elegí la que más te guste. La que más sentís que sos vos.
+            Elegí la que más te guste. La que más sientes que eres tú.
           </p>
           <div id="heroine-grid" class="heroine-grid"></div>
         </section>
@@ -1011,16 +1011,16 @@
       // ---------- Resultado ----------
       const showResult = (name: string, role: string) => {
         const messages: Record<string, string> = {
-          Hanabi: 'Hanabi lanza sus flechas con una precisión increíble, llena de luz y de poder. Como vos cuando jugás: enfocada, segura, sin que nada te detenga.',
+          Hanabi: 'Hanabi lanza sus flechas con una precisión increíble, llena de luz y de poder. Como tú cuando juegas: enfocada, segura, sin que nada te detenga.',
           Miya: 'Miya dispara desde lejos con precisión y paciencia. Clásica y elegante, como la esencia que llevás dentro.',
-          Pharsa: 'Pharsa vuela sobre el campo de batalla con una vista que nadie más tiene. Como vos: siempre viendo las cosas desde otra perspectiva.',
-          'Luo Yi': 'Luo Yi lee los astros y guía con magia antigua. Como vos: siempre conectada con lo que sentís, con esa intuición que no falla.',
-          Estes: 'Estes es de los apoyos más nobles: curar sin esperar nada a cambio. Como vos con los que querés.',
-          Guinevere: 'Guinevere es elegante, poderosa y tiene un corazón noble. Como vos, Mariela: fuerte por fuera, suave por dentro.',
-          Fanny: 'Fanny es rápida, arriesgada y hace cosas que nadie más se atreve. Como vos.',
+          Pharsa: 'Pharsa vuela sobre el campo de batalla con una vista que nadie más tiene. Como tú: siempre viendo las cosas desde otra perspectiva.',
+          'Luo Yi': 'Luo Yi lee los astros y guía con magia antigua. Como tú: siempre conectada con lo que sientes, con esa intuición que no falla.',
+          Estes: 'Estes es de los apoyos más nobles: curar sin esperar nada a cambio. Como tú con los que quieres.',
+          Guinevere: 'Guinevere es elegante, poderosa y tiene un corazón noble. Como tú, Mariela: fuerte por fuera, suave por dentro.',
+          Fanny: 'Fanny es rápida, arriesgada y hace cosas que nadie más se atreve. Como tú.',
           Kagura: 'Kagura es mágica, llena de luz. Como la magia que le pusiste a mi vida.',
-          Chou: 'Chou nunca se rinde, aguanta todo y vuelve más fuerte. Eso sos vos, Mariela.',
-          Angela: 'Angela cuida, protege y da todo por los suyos. Como vos.'
+          Chou: 'Chou nunca se rinde, aguanta todo y vuelve más fuerte. Eso eres tú, Mariela.',
+          Angela: 'Angela cuida, protege y da todo por los suyos. Como tú.'
         };
 
         const message = messages[name] || `Elegiste a ${name}. Si es tu favorita, ya me cae bien. 💛`;
