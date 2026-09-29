@@ -53,15 +53,9 @@
           </p>
           <div class="round-preview">
             <div class="round-preview-item">
-              <span class="round-num">R1</span>
-              <span class="round-label">Items ML</span>
-              <span class="round-count">6 preguntas</span>
-            </div>
-            <div class="round-divider-arrow">→</div>
-            <div class="round-preview-item">
-              <span class="round-num">R2</span>
-              <span class="round-label">Héroes</span>
-              <span class="round-count">8 preguntas</span>
+              <span class="round-num">🎮</span>
+              <span class="round-label">Adivina el héroe</span>
+              <span class="round-count">10 preguntas con emojis</span>
             </div>
           </div>
           <button id="btn-start" type="button" class="game-btn">
@@ -70,43 +64,20 @@
           </button>
         </section>
 
-        {/* ============ PANTALLA 2: Intro de Ronda ============ */}
-        <section id="screen-round-intro" class="screen">
-          <div id="round-intor-badge" class="round-intor-badge">Ronda 1</div>
-          <h2 id="round-intro-title" class="game-title">Reconocé los items</h2>
-          <p id="round-intro-desc" class="game-subtitle">
-            Te voy a mostrar objetos del juego.
-            <br />
-            Decime qué tipo de objeto es.
-          </p>
-          <button id="btn-round-start" type="button" class="game-btn">
-            <span>¡Vamos!</span>
-            <span class="text-xl">🗡️</span>
-          </button>
-        </section>
-
-        {/* ============ PANTALLA 3: Juego ============ */}
+        {/* ============ PANTALLA 2: Juego ============ */}
         <section id="screen-game" class="screen">
           <div class="game-progress">
             <div class="progress-info">
-              <span id="round-label" class="round-label-top">Ronda 1</span>
-              <span id="round-counter" class="round-counter">Pregunta 1 / 6</span>
+              <span class="round-label-top">Adivina el héroe</span>
+              <span id="round-counter" class="round-counter">Pregunta 1 / 10</span>
             </div>
             <div class="progress-track">
               <div id="progress-fill" class="progress-fill"></div>
             </div>
           </div>
 
-          {/* Para Ronda 1: item SVG */}
-          <div id="item-display" class="item-display hidden">
-            <div class="item-frame">
-              <div id="item-svg" class="item-svg"></div>
-              <p class="item-label">¿Qué tipo de objeto es?</p>
-            </div>
-          </div>
-
-          {/* Para Ronda 2: emojis */}
-          <div id="rune-container" class="rune-container hidden">
+          {/* Emojis */}
+          <div id="rune-container" class="rune-container">
             <div class="rune-frame">
               <p class="rune-label">Esta runa mágica representa al héroe:</p>
               <div id="rune-emojis" class="rune-emojis"></div>
@@ -369,58 +340,9 @@
       }
 
       /* Item display (Ronda 1) */
-      .item-display {
-        margin-bottom: 22px;
-        animation: itemIn 0.5s ease-out;
-      }
-      @keyframes itemIn {
-        from { opacity: 0; transform: scale(0.7) rotate(-10deg); }
-        to { opacity: 1; transform: scale(1) rotate(0deg); }
-      }
-      .item-frame {
-        background:
-          radial-gradient(circle at 50% 50%, rgba(245, 176, 40, 0.18) 0%, transparent 70%),
-          rgba(255, 252, 242, 0.04);
-        border: 2px solid rgba(255, 212, 102, 0.3);
-        border-radius: 20px;
-        padding: 30px 24px;
-        position: relative;
-      }
-      .item-frame::before, .item-frame::after {
-        content: '✦';
-        position: absolute;
-        top: 12px;
-        color: rgba(255, 212, 102, 0.6);
-        font-size: 12px;
-      }
-      .item-frame::before { left: 14px; }
-      .item-frame::after { right: 14px; }
+            /* Rune (emojis del héroe) */
 
-      .item-svg {
-        width: 100px;
-        height: 100px;
-        margin: 0 auto 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        filter: drop-shadow(0 6px 20px rgba(255, 212, 102, 0.4));
-        animation: itemFloat 3s ease-in-out infinite;
-      }
-      .item-svg svg { width: 100%; height: 100%; }
-      @keyframes itemFloat {
-        0%, 100% { transform: translateY(0) rotate(-2deg); }
-        50% { transform: translateY(-8px) rotate(2deg); }
-      }
-      .item-label {
-        font-family: 'Cormorant Garamond', serif;
-        font-style: italic;
-        color: rgba(255, 252, 242, 0.85);
-        font-size: 15px;
-        margin: 0;
-        text-align: center;
-      }
 
-      /* Rune (Ronda 2) */
       .rune-container {
         margin-bottom: 22px;
       }
@@ -647,101 +569,8 @@
 
     <script>
       // =========================================================
-      // SVGs de items ML (estilo MOBA, colores representativos)
+      // Datos del juego
       // =========================================================
-      const itemShield = `
-        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-          <defs><linearGradient id="shieldG" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#60A5FA"/><stop offset="100%" stop-color="#1E40AF"/>
-          </linearGradient></defs>
-          <path d="M 50 12 L 82 22 L 82 55 Q 82 80 50 92 Q 18 80 18 55 L 18 22 Z"
-                fill="url(#shieldG)" stroke="#FFD700" stroke-width="3"/>
-          <path d="M 50 28 L 62 38 L 56 52 L 68 58 L 50 78 L 32 58 L 44 52 L 38 38 Z"
-                fill="#FFD700"/>
-          <circle cx="50" cy="50" r="4" fill="#1E3A8A"/>
-        </svg>
-      `;
-
-      const itemSword = `
-        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-          <defs><linearGradient id="swordG" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#FCA5A5"/><stop offset="100%" stop-color="#B91C1C"/>
-          </linearGradient></defs>
-          <path d="M 28 72 L 50 50 L 72 72 L 80 64 L 50 34 L 20 64 Z"
-                fill="url(#swordG)" stroke="#7F1D1D" stroke-width="2"/>
-          <rect x="46" y="22" width="8" height="14" fill="#FFD700" rx="1"/>
-          <rect x="38" y="18" width="24" height="6" fill="#FFD700" rx="2"/>
-          <circle cx="50" cy="20" r="3" fill="#F59E0B"/>
-        </svg>
-      `;
-
-      const itemStaff = `
-        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-          <defs><radialGradient id="orbG" cx="50%" cy="30%">
-            <stop offset="0%" stop-color="#E9D5FF"/><stop offset="100%" stop-color="#7C3AED"/>
-          </radialGradient></defs>
-          <rect x="47" y="40" width="6" height="50" fill="#4C1D95" rx="2"/>
-          <circle cx="50" cy="32" r="14" fill="url(#orbG)" stroke="#5B21B6" stroke-width="2"/>
-          <circle cx="50" cy="32" r="7" fill="#FAF5FF"/>
-          <path d="M 28 32 L 18 22 M 72 32 L 82 22 M 30 35 L 22 18 M 70 35 L 78 18"
-                stroke="#A78BFA" stroke-width="2" stroke-linecap="round"/>
-          <circle cx="20" cy="22" r="2" fill="#E9D5FF"/>
-          <circle cx="80" cy="22" r="2" fill="#E9D5FF"/>
-          <circle cx="22" cy="18" r="2" fill="#E9D5FF"/>
-          <circle cx="78" cy="18" r="2" fill="#E9D5FF"/>
-        </svg>
-      `;
-
-      const itemBow = `
-        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-          <defs><linearGradient id="bowG" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#86EFAC"/><stop offset="100%" stop-color="#15803D"/>
-          </linearGradient></defs>
-          <path d="M 32 18 Q 76 50 32 82" stroke="url(#bowG)" stroke-width="6" fill="none" stroke-linecap="round"/>
-          <path d="M 32 18 L 32 82" stroke="#BBF7D0" stroke-width="1.5"/>
-          <line x1="20" y1="50" x2="78" y2="46" stroke="#FFFCF2" stroke-width="2"/>
-          <polygon points="78,46 70,44 70,48" fill="#FFFCF2"/>
-          <polygon points="20,50 14,48 14,52" fill="#FFFCF2"/>
-          <circle cx="78" cy="46" r="2" fill="#FCA5A5"/>
-        </svg>
-      `;
-
-      const itemCross = `
-        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-          <defs><radialGradient id="crossG" cx="50%" cy="50%">
-            <stop offset="0%" stop-color="#FBCFE8"/><stop offset="100%" stop-color="#BE185D"/>
-          </radialGradient></defs>
-          <circle cx="50" cy="50" r="36" fill="url(#crossG)" stroke="#9D174D" stroke-width="2"/>
-          <rect x="44" y="22" width="12" height="56" fill="#FFFCF2" rx="2"/>
-          <rect x="22" y="44" width="56" height="12" fill="#FFFCF2" rx="2"/>
-          <circle cx="50" cy="50" r="10" fill="rgba(255,255,255,0.4)"/>
-          <circle cx="38" cy="38" r="2" fill="#FCE7F3"/>
-        </svg>
-      `;
-
-      const itemEmblem = `
-        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-          <defs><radialGradient id="embG" cx="50%" cy="50%">
-            <stop offset="0%" stop-color="#FEF3C7"/><stop offset="100%" stop-color="#D97706"/>
-          </radialGradient></defs>
-          <circle cx="50" cy="50" r="38" fill="url(#embG)" stroke="#92400E" stroke-width="3"/>
-          <circle cx="50" cy="50" r="30" fill="none" stroke="#FFFCF2" stroke-width="1.5" stroke-dasharray="4 2"/>
-          <path d="M 50 25 L 56 42 L 74 42 L 60 52 L 66 70 L 50 60 L 34 70 L 40 52 L 26 42 L 44 42 Z"
-                fill="#FFFCF2" stroke="#92400E" stroke-width="1"/>
-          <circle cx="50" cy="48" r="4" fill="#DC2626"/>
-        </svg>
-      `;
-
-      // =========================================================
-      // Datos de las rondas
-      // =========================================================
-      type ItemQuestion = {
-        svg: string;
-        answer: string;
-        options: string[];
-        hint: string;
-      };
-
       type HeroQuestion = {
         emojis: string[];
         answer: string;
@@ -755,70 +584,37 @@
         emoji: string;
       };
 
-      const itemsRound: ItemQuestion[] = [
-        {
-          svg: itemShield,
-          answer: 'Defensa',
-          options: ['Defensa', 'Ataque Físico', 'Magia', 'Curación'],
-          hint: 'Reduce el daño que recibís'
-        },
-        {
-          svg: itemSword,
-          answer: 'Ataque Físico',
-          options: ['Magia', 'Ataque Físico', 'Defensa', 'Velocidad'],
-          hint: 'Causa daño cuerpo a cuerpo'
-        },
-        {
-          svg: itemStaff,
-          answer: 'Magia',
-          options: ['Curación', 'Magia', 'Ataque Físico', 'Defensa'],
-          hint: 'Lanza hechizos devastadores'
-        },
-        {
-          svg: itemBow,
-          answer: 'Ataque a Distancia',
-          options: ['Defensa', 'Ataque Físico', 'Ataque a Distancia', 'Curación'],
-          hint: 'Ataca desde lejos con precisión'
-        },
-        {
-          svg: itemCross,
-          answer: 'Curación',
-          options: ['Magia', 'Defensa', 'Curación', 'Ataque Físico'],
-          hint: 'Restaura la vida de los aliados'
-        },
-        {
-          svg: itemEmblem,
-          answer: 'Emblema',
-          options: ['Emblema', 'Botas', 'Arma', 'Pociones'],
-          hint: 'Poder pasivo que mejora tus stats'
-        }
-      ];
-
       const heroesRound: HeroQuestion[] = [
-        { emojis: ['🛡️', '💪', '⚔️'], answer: 'Tank / Guerrero',
-          options: ['Tank / Guerrero', 'Maga', 'Asesina', 'Apoyo'],
+        { emojis: ['🛡️', '💪', '⚔️'], answer: 'Tank',
+          options: ['Tank', 'Maga', 'Asesina', 'Apoyo'],
           hint: 'Defiende al equipo y aguanta todo el daño' },
         { emojis: ['🧙‍♀️', '🔮', '✨'], answer: 'Maga',
           options: ['Arquera', 'Maga', 'Luchadora', 'Apoyo'],
           hint: 'Lanza hechizos devastadores desde lejos' },
-        { emojis: ['🏹', '🌿', '👁️'], answer: 'Arquera',
-          options: ['Tank / Guerrero', 'Apoyo', 'Arquera', 'Maga'],
+        { emojis: ['🏹', '🌿', '👁️'], answer: 'Tirador',
+          options: ['Tank', 'Apoyo', 'Tirador', 'Maga'],
           hint: 'Ataca desde lejos con precisión mortal' },
         { emojis: ['🗡️', '🌙', '⚡'], answer: 'Asesina',
-          options: ['Maga', 'Asesina', 'Tank / Guerrero', 'Arquera'],
+          options: ['Maga', 'Asesina', 'Tank', 'Tirador'],
           hint: 'Rápida, letal y aparece de la nada' },
         { emojis: ['💖', '🌸', '🤲'], answer: 'Apoyo',
-          options: ['Apoyo', 'Asesina', 'Luchadora', 'Arquera'],
+          options: ['Apoyo', 'Asesina', 'Luchadora', 'Tirador'],
           hint: 'Cura al equipo y lo hace más fuerte' },
         { emojis: ['🥋', '👊', '🔥'], answer: 'Luchador',
-          options: ['Tank / Guerrero', 'Luchador', 'Maga', 'Apoyo'],
+          options: ['Tank', 'Luchador', 'Maga', 'Apoyo'],
           hint: 'Cuerpo a cuerpo, no se rinde nunca' },
-        { emojis: ['🎯', '🔫', '💨'], answer: 'Tirador',
-          options: ['Tirador', 'Asesina', 'Luchador', 'Maga'],
-          hint: 'Ataques rápidos desde lejos, daño constante' },
-        { emojis: ['🐉', '🌙', '⚡'], answer: 'Asesina',
-          options: ['Tank / Guerrero', 'Maga', 'Asesina', 'Apoyo'],
-          hint: 'Letal, sigilosa y muy rápida' }
+        { emojis: ['❄️', '🌊', '🐉'], answer: 'Maga',
+          options: ['Tank', 'Tirador', 'Luchador', 'Maga'],
+          hint: 'Congela y controla a los enemigos' },
+        { emojis: ['🌺', '⚔️', '🛡️'], answer: 'Luchador',
+          options: ['Asesina', 'Luchador', 'Apoyo', 'Tank'],
+          hint: 'Ataca con espadas y poderes de tierra' },
+        { emojis: ['👑', '💫', '✨'], answer: 'Maga',
+          options: ['Tirador', 'Maga', 'Luchador', 'Asesina'],
+          hint: 'Controla el tiempo y los elementos' },
+        { emojis: ['🐺', '⚡', '🌙'], answer: 'Asesina',
+          options: ['Tank', 'Apoyo', 'Asesina', 'Tirador'],
+          hint: 'Salta entre sombras y ataca por sorpresa' }
       ];
 
       const heroines: Heroine[] = [
@@ -840,14 +636,12 @@
       // =========================================================
       // Estado del juego
       // =========================================================
-      let currentRound = 0; // 0 = round 1, 1 = round 2
       let questionIndex = 0;
       let score = 0;
-      const totalQuestions = itemsRound.length + heroesRound.length;
+      const totalQuestions = heroesRound.length;
 
       const screens = {
         welcome: document.getElementById('screen-welcome')!,
-        roundIntro: document.getElementById('screen-round-intro')!,
         game: document.getElementById('screen-game')!,
         final: document.getElementById('screen-final')!,
         result: document.getElementById('screen-result')!
@@ -860,64 +654,26 @@
 
       // ---------- Inicio ----------
       document.getElementById('btn-start')?.addEventListener('click', () => {
-        currentRound = 0;
         questionIndex = 0;
         score = 0;
-        showRoundIntro();
-      });
-
-      document.getElementById('btn-round-start')?.addEventListener('click', () => {
         showScreen('game');
         renderQuestion();
       });
 
-      // ---------- Intro de ronda ----------
-      const showRoundIntro = () => {
-        const badge = document.getElementById('round-intor-badge');
-        const title = document.getElementById('round-intro-title');
-        const desc = document.getElementById('round-intro-desc');
-
-        if (currentRound === 0) {
-          if (badge) badge.textContent = 'Ronda 1';
-          if (title) title.textContent = 'Reconocé los items';
-          if (desc) desc.innerHTML = 'Te voy a mostrar objetos del juego.<br/>Decime qué tipo de objeto es.';
-        } else {
-          if (badge) badge.textContent = 'Ronda 2';
-          if (title) title.textContent = 'Adivina el héroe';
-          if (desc) desc.innerHTML = 'Ahora con emojis mágicos.<br/>¿Qué clase de héroe representan?';
-        }
-        showScreen('roundIntro');
-      };
-
       // ---------- Renderizar pregunta ----------
       const renderQuestion = () => {
-        const questions = currentRound === 0 ? itemsRound : heroesRound;
-        const q = questions[questionIndex];
-        const total = questions.length;
-        const globalIndex = currentRound * itemsRound.length + questionIndex;
+        const q = heroesRound[questionIndex];
+        const total = heroesRound.length;
 
-        // Progreso global
+        // Progreso
         const fillEl = document.getElementById('progress-fill') as HTMLElement;
-        const roundLabel = document.getElementById('round-label');
         const roundCounter = document.getElementById('round-counter');
-        if (roundLabel) roundLabel.textContent = `Ronda ${currentRound + 1}`;
         if (roundCounter) roundCounter.textContent = `Pregunta ${questionIndex + 1} / ${total}`;
-        if (fillEl) fillEl.style.width = `${(globalIndex / totalQuestions) * 100}%`;
+        if (fillEl) fillEl.style.width = `${(questionIndex / total) * 100}%`;
 
-        // Mostrar item O emojis según la ronda
-        const itemDisplay = document.getElementById('item-display');
-        const runeContainer = document.getElementById('rune-container');
-        if (currentRound === 0) {
-          itemDisplay?.classList.remove('hidden');
-          runeContainer?.classList.add('hidden');
-          const itemSvg = document.getElementById('item-svg');
-          if (itemSvg) itemSvg.innerHTML = (q as ItemQuestion).svg;
-        } else {
-          itemDisplay?.classList.add('hidden');
-          runeContainer?.classList.remove('hidden');
-          const runeEmojis = document.getElementById('rune-emojis');
-          if (runeEmojis) runeEmojis.innerHTML = (q as HeroQuestion).emojis.map((e) => `<span>${e}</span>`).join(' + ');
-        }
+        // Mostrar los 3 emojis
+        const runeEmojis = document.getElementById('rune-emojis');
+        if (runeEmojis) runeEmojis.innerHTML = q.emojis.map((e) => `<span>${e}</span>`).join(' + ');
 
         // Renderizar opciones
         const grid = document.getElementById('options-grid')!;
@@ -965,21 +721,14 @@
 
         window.setTimeout(() => {
           questionIndex++;
-          const currentQuestions = currentRound === 0 ? itemsRound : heroesRound;
-          if (questionIndex < currentQuestions.length) {
+          if (questionIndex < heroesRound.length) {
             renderQuestion();
           } else {
-            // Terminó esta ronda
-            if (currentRound === 0) {
-              currentRound = 1;
-              questionIndex = 0;
-              showRoundIntro();
-            } else {
-              showScreen('final');
-              renderHeroines();
-              const fillEl = document.getElementById('progress-fill') as HTMLElement;
-              if (fillEl) fillEl.style.width = '100%';
-            }
+            // Terminó: pasa a la pregunta final
+            showScreen('final');
+            renderHeroines();
+            const fillEl = document.getElementById('progress-fill') as HTMLElement;
+            if (fillEl) fillEl.style.width = '100%';
           }
         }, 1800);
       };
