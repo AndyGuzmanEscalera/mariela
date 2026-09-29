@@ -20,6 +20,7 @@ const days = [
     dateLabel: '29 de Septiembre',
     title: 'Mujer genial y fuerte',
     frontMessage: 'Hoy quiero recordarte algo: eres una mujer genial y muy fuerte. 💛',
+    photo: 'photos/mariela-martes.jpg',
     requiresPassword: true,
     password: '26',
     passwordHint: '¿Cuántos años tenías cuando nos conocimos?',
@@ -102,7 +103,7 @@ const days = [
 ---
 
 <!doctype html>
-<html lang="es">
+<html lang="es" data-base-url={import.meta.env.BASE_URL}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5" />
@@ -179,10 +180,23 @@ const days = [
             data-day-requires-password={String(day.requiresPassword)}
             data-day-password={day.password ?? ''}
             data-day-password-hint={day.passwordHint ?? ''}
+            data-day-photo={day.photo ?? ''}
           >
             <!-- Sobre (parte de atrás) -->
-            <div class="envelope envelope-back">
-              <div class="envelope-flap"></div>
+            <div class:list={["envelope", "envelope-back", day.photo && "envelope-with-photo"]}>
+              {day.photo && (
+                <>
+                  <img
+                    src={`${import.meta.env.BASE_URL}${day.photo}`}
+                    alt={`Mariela - ${day.dayName}`}
+                    class="envelope-photo"
+                    loading="lazy"
+                    onerror="this.parentElement.parentElement.classList.remove('envelope-with-photo'); this.style.display='none';"
+                  />
+                  <div class="envelope-gradient" aria-hidden="true"></div>
+                </>
+              )}
+              {!day.photo && <div class="envelope-flap"></div>}
               <span class="envelope-day">Día {day.number}</span>
               <span class="envelope-date">{day.dayName}</span>
               <span class="envelope-datelabel">{day.dateLabel}</span>
@@ -292,6 +306,9 @@ const days = [
 
         <div class="modal-body p-8 md:p-10">
           <div class="text-center mb-6">
+            <div id="reveal-photo-frame" class="hidden mb-4">
+              <img id="reveal-photo" alt="" class="reveal-photo" />
+            </div>
             <span id="reveal-emoji" class="text-6xl block mb-4"></span>
             <h3 id="reveal-title" class="modal-title"></h3>
             <div class="mt-3 flex items-center justify-center gap-3">
@@ -405,6 +422,53 @@ const days = [
         clip-path: polygon(0 0, 100% 0, 50% 100%);
         pointer-events: none;
       }
+
+      /* ============ ENVELOPE CON FOTO ============ */
+      .envelope-with-photo {
+        background: #2B1810;
+      }
+      .envelope-photo {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        z-index: 0;
+      }
+      .envelope-gradient {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg,
+          rgba(45, 24, 16, 0) 25%,
+          rgba(45, 24, 16, 0.35) 55%,
+          rgba(45, 24, 16, 0.92) 100%);
+        z-index: 1;
+        pointer-events: none;
+      }
+      .envelope-with-photo .envelope-day {
+        color: #FFD466;
+        text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+        position: relative;
+        z-index: 2;
+      }
+      .envelope-with-photo .envelope-date {
+        color: #FFFCF2;
+        text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+        position: relative;
+        z-index: 2;
+      }
+      .envelope-with-photo .envelope-datelabel {
+        color: rgba(255, 252, 242, 0.9);
+        text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+        position: relative;
+        z-index: 2;
+      }
+      /* Empujar el texto hacia abajo cuando hay foto */
+      .envelope-with-photo {
+        justify-content: flex-end;
+        padding-bottom: 22%;
+      }
+      .envelope-with-photo .envelope-day { margin-top: 0; }
 
       .envelope-day {
         font-family: 'Great Vibes', cursive;
@@ -672,6 +736,19 @@ const days = [
         padding: 0 8px;
       }
 
+      /* Foto dentro del modal de revelación */
+      .reveal-photo {
+        width: 100%;
+        max-width: 280px;
+        aspect-ratio: 3 / 4;
+        object-fit: cover;
+        border-radius: 16px;
+        border: 2px solid #D4A574;
+        box-shadow: 0 20px 50px -15px rgba(0, 0, 0, 0.4);
+        display: block;
+        margin: 0 auto;
+      }
+
       /* Shake animation for wrong password */
       .shake { animation: shake 0.5s ease-in-out; }
       @keyframes shake {
@@ -697,7 +774,11 @@ const days = [
         requiresPassword: boolean;
         password: string;
         passwordHint: string;
+        photo: string;
       };
+
+      // Base URL para resolver rutas absolutas de imágenes desde el JS del cliente.
+      const BASE_URL = document.documentElement.dataset.baseUrl || '/mariela/';
 
       const cards = Array.from(document.querySelectorAll<HTMLElement>('.letter-card'));
 
@@ -785,7 +866,8 @@ const days = [
         insideEmoji: card.dataset.dayInsideEmoji!,
         requiresPassword: card.dataset.dayRequiresPassword === 'true',
         password: card.dataset.dayPassword ?? '',
-        passwordHint: card.dataset.dayPasswordHint ?? ''
+        passwordHint: card.dataset.dayPasswordHint ?? '',
+        photo: card.dataset.dayPhoto ?? ''
       });
 
       const showPasswordModal = (day: DayData) => {
@@ -801,8 +883,21 @@ const days = [
         revealStrip.textContent = `${day.name} · ${day.label}`;
         revealTitle.textContent = day.insideTitle;
         revealMessage.textContent = day.insideMessage;
-        revealEmoji.textContent = day.insideEmoji;
         revealDayLabel.textContent = `Día ${day.number}`;
+
+        // Foto vs emoji: si la carta tiene foto, mostramos la foto.
+        const photoFrame = document.getElementById('reveal-photo-frame')!;
+        const revealPhoto = document.getElementById('reveal-photo') as HTMLImageElement;
+        if (day.photo) {
+          revealPhoto.src = `${BASE_URL}${day.photo}`;
+          photoFrame.classList.remove('hidden');
+          revealEmoji.classList.add('hidden');
+        } else {
+          revealEmoji.textContent = day.insideEmoji;
+          photoFrame.classList.add('hidden');
+          revealEmoji.classList.remove('hidden');
+        }
+
         openModal(revealModal);
       };
 
