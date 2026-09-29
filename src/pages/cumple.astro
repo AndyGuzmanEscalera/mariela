@@ -190,7 +190,7 @@ const days = [
           <!-- Formulario de respuesta -->
           <form
             id="response-form"
-            action="https://formsubmit.co/andyguzman117@gmail.com"
+            action="https://mariela-responses.andyguzman117.workers.dev"
             method="POST"
             class="response-form"
           >
@@ -1318,13 +1318,18 @@ const days = [
           });
 
           if (response.ok) {
+            const data = await response.json().catch(() => ({}));
+            if (data.success === false) {
+              throw new Error(data.error || 'Submit failed');
+            }
             showThanks();
           } else {
-            throw new Error('Submit failed');
+            throw new Error(`HTTP ${response.status}`);
           }
         } catch (err) {
-          // Fallback: envío nativo (redirige a página de FormSubmit)
-          responseForm.submit();
+          // Si falla, re-habilitar y mostrar error
+          buttons.forEach((b) => (b.disabled = false));
+          showError();
         }
       });
 
