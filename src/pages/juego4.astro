@@ -483,12 +483,15 @@
       const TOWER_W = 60;
       const TOWER_H = 180;
 
+      type MinionType = 'small' | 'medium' | 'big' | 'speeder';
+
       type Minion = {
         x: number;
         y: number;
         hp: number;
+        maxHp: number;
         speed: number;
-        type: 'small' | 'big';
+        type: MinionType;
         flash: number;
       };
 
@@ -497,6 +500,8 @@
         y: number;
         vx: number;
         vy: number;
+        waveOffset: number;
+        isLazaan: boolean;
       };
 
       type Particle = {
@@ -746,13 +751,26 @@
       const drawMinion = (m: Minion) => {
         const x = m.x;
         const y = m.y;
-        const isBig = m.type === 'big';
-        const w = isBig ? 36 : 26;
-        const h = isBig ? 50 : 36;
+        const sizes = {
+          small: { w: 24, h: 34 },
+          speeder: { w: 20, h: 28 },
+          medium: { w: 30, h: 42 },
+          big: { w: 38, h: 54 }
+        };
+        const colors: Record<MinionType, { fill: string; stroke: string; eye: string }> = {
+          small:   { fill: '#DC2626', stroke: '#7F1D1D', eye: '#FBBF24' },
+          speeder: { fill: '#FBBF24', stroke: '#B45309', eye: '#7F1D1D' },
+          medium:  { fill: '#7C3AED', stroke: '#4C1D95', eye: '#FCA5A5' },
+          big:     { fill: '#1F2937', stroke: '#0F172A', eye: '#EF4444' }
+        };
+        const sz = sizes[m.type];
+        const w = sz.w;
+        const h = sz.h;
+        const palette = colors[m.type];
 
         // Flash on hit
-        const fill = m.flash > 0 ? '#FFFFFF' : (isBig ? '#7F1D1D' : '#DC2626');
-        const stroke = isBig ? '#450A0A' : '#7F1D1D';
+        const fill = m.flash > 0 ? '#FFFFFF' : palette.fill;
+        const stroke = m.flash > 0 ? '#FFFFFF' : palette.stroke;
 
         // Body
         ctx.fillStyle = fill;
@@ -763,31 +781,61 @@
         ctx.lineWidth = 1.5;
         ctx.stroke();
 
-        // Eyes (angry)
-        ctx.fillStyle = '#FBBF24';
+        // Detalle: helmet/spikes para big
+        if (m.type === 'big') {
+          ctx.fillStyle = '#450A0A';
+          for (let i = 0; i < 3; i++) {
+            const sx = x + w / 2 - 10 + i * 10;
+            ctx.beginPath();
+            ctx.moveTo(sx, y + 2);
+            ctx.lineTo(sx + 3, y - 4);
+            ctx.lineTo(sx + 6, y + 2);
+            ctx.closePath();
+            ctx.fill();
+          }
+        }
+
+        // Speed lines para speeder
+        if (m.type === 'speeder') {
+          ctx.strokeStyle = '#FCD34D';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(x + w, y + h / 2 - 6);
+          ctx.lineTo(x + w + 12, y + h / 2 - 6);
+          ctx.moveTo(x + w, y + h / 2);
+          ctx.lineTo(x + w + 14, y + h / 2);
+          ctx.moveTo(x + w, y + h / 2 + 6);
+          ctx.lineTo(x + w + 12, y + h / 2 + 6);
+          ctx.stroke();
+        }
+
+        // Eyes
+        ctx.fillStyle = palette.eye;
+        const eyeOff = m.type === 'big' ? 7 : 5;
         ctx.beginPath();
-        ctx.arc(x + w / 2 - 5, y + 10, 3, 0, Math.PI * 2);
-        ctx.arc(x + w / 2 + 5, y + 10, 3, 0, Math.PI * 2);
+        ctx.arc(x + w / 2 - eyeOff, y + 10, m.type === 'big' ? 4 : 3, 0, Math.PI * 2);
+        ctx.arc(x + w / 2 + eyeOff, y + 10, m.type === 'big' ? 4 : 3, 0, Math.PI * 2);
         ctx.fill();
         ctx.fillStyle = '#000';
         ctx.beginPath();
-        ctx.arc(x + w / 2 - 5, y + 10, 1.2, 0, Math.PI * 2);
-        ctx.arc(x + w / 2 + 5, y + 10, 1.2, 0, Math.PI * 2);
+        ctx.arc(x + w / 2 - eyeOff, y + 10, m.type === 'big' ? 1.8 : 1.2, 0, Math.PI * 2);
+        ctx.arc(x + w / 2 + eyeOff, y + 10, m.type === 'big' ? 1.8 : 1.2, 0, Math.PI * 2);
         ctx.fill();
 
         // Mouth
         ctx.strokeStyle = '#000';
         ctx.lineWidth = 1.2;
         ctx.beginPath();
-        ctx.arc(x + w / 2, y + 18, 5, 0.2, Math.PI - 0.2);
+        ctx.arc(x + w / 2, y + 18, m.type === 'big' ? 7 : 5, 0.2, Math.PI - 0.2);
         ctx.stroke();
 
         // HP bar (only if damaged)
-        if (m.hp < (isBig ? 3 : 1)) {
+        if (m.hp < m.maxHp) {
           ctx.fillStyle = '#000';
           ctx.fillRect(x, y - 8, w, 4);
-          ctx.fillStyle = '#EF4444';
-          ctx.fillRect(x, y - 8, (w * m.hp) / (isBig ? 3 : 1), 4);
+          const hpColor = m.hp / m.maxHp > 0.5 ? '#4ADE80' : m.hp / m.maxHp > 0.25 ? '#FBBF24' : '#EF4444';
+          ctx.fillStyle = hpColor;
+          ctx.fillRect(x, y - 8, (w * m.hp) / m.maxHp, 4);
         }
       };
 
@@ -868,31 +916,54 @@
       };
 
       const drawProjectile = (p: Projectile) => {
-        // Glow
-        ctx.fillStyle = 'rgba(255, 212, 102, 0.25)';
+        // Glow púrpura (estilo Lazaan)
+        ctx.fillStyle = 'rgba(168, 85, 247, 0.3)';
         ctx.beginPath();
-        ctx.arc(p.x, p.y, 9, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, 11, 0, Math.PI * 2);
         ctx.fill();
 
-        // Arrow head
-        ctx.fillStyle = '#FFD466';
+        // Arrow head púrpura
+        ctx.fillStyle = '#A855F7';
         ctx.beginPath();
-        ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#F0ABFC';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Núcleo brillante
+        ctx.fillStyle = '#FAE8FF';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
         ctx.fill();
 
-        // Trail
-        const trailLen = 18;
-        const trailX = p.x - (p.vx / Math.hypot(p.vx, p.vy)) * trailLen;
-        const trailY = p.y - (p.vy / Math.hypot(p.vx, p.vy)) * trailLen;
+        // Trail ondulado púrpura
+        const speed = Math.hypot(p.vx, p.vy) || 1;
+        const trailLen = 24;
+        const trailX = p.x - (p.vx / speed) * trailLen;
+        const trailY = p.y - (p.vy / speed) * trailLen;
         const trailGrad = ctx.createLinearGradient(trailX, trailY, p.x, p.y);
-        trailGrad.addColorStop(0, 'rgba(255, 212, 102, 0)');
-        trailGrad.addColorStop(1, 'rgba(255, 212, 102, 0.7)');
+        trailGrad.addColorStop(0, 'rgba(168, 85, 247, 0)');
+        trailGrad.addColorStop(0.5, 'rgba(192, 132, 252, 0.4)');
+        trailGrad.addColorStop(1, 'rgba(232, 121, 249, 0.9)');
         ctx.strokeStyle = trailGrad;
-        ctx.lineWidth = 2.5;
+        ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.moveTo(trailX, trailY);
         ctx.lineTo(p.x, p.y);
         ctx.stroke();
+
+        // Sparkles alrededor
+        const sparkleAngle = (p.x + p.y) * 0.1;
+        for (let i = 0; i < 3; i++) {
+          const a = sparkleAngle + (i * Math.PI * 2 / 3);
+          const sx = p.x + Math.cos(a) * 8;
+          const sy = p.y + Math.sin(a) * 8;
+          ctx.fillStyle = '#F0ABFC';
+          ctx.beginPath();
+          ctx.arc(sx, sy, 1.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
       };
 
       const drawParticles = () => {
@@ -918,14 +989,39 @@
       ];
 
       const spawnMinion = () => {
-        const isBig = state.wave >= 2 && Math.random() < 0.3;
         const laneY = lanes[Math.floor(Math.random() * lanes.length)] + (Math.random() * 30 - 15);
+        // Selección de tipo según wave y random
+        const r = Math.random();
+        let type: MinionType = 'small';
+        if (state.wave === 1) {
+          type = r < 0.6 ? 'small' : 'speeder';
+        } else if (state.wave === 2) {
+          if (r < 0.35) type = 'small';
+          else if (r < 0.65) type = 'speeder';
+          else if (r < 0.9) type = 'medium';
+          else type = 'big';
+        } else {
+          if (r < 0.2) type = 'small';
+          else if (r < 0.45) type = 'speeder';
+          else if (r < 0.75) type = 'medium';
+          else type = 'big';
+        }
+
+        const configs = {
+          small:   { hp: 1, speed: 75  + state.wave * 6,  w: 24, h: 34 },
+          speeder: { hp: 1, speed: 130 + state.wave * 8,  w: 20, h: 28 },
+          medium:  { hp: 2, speed: 55  + state.wave * 5,  w: 30, h: 42 },
+          big:     { hp: 4, speed: 38  + state.wave * 3,  w: 38, h: 54 }
+        };
+        const cfg = configs[type];
+
         state.minions.push({
           x: W + 30,
           y: laneY,
-          hp: isBig ? 3 : 1,
-          speed: isBig ? 60 : 80 + state.wave * 8,
-          type: isBig ? 'big' : 'small',
+          hp: cfg.hp,
+          maxHp: cfg.hp,
+          speed: cfg.speed,
+          type,
           flash: 0
         });
       };
@@ -941,12 +1037,18 @@
         const speed = 480;
         const vx = (dx / dist) * speed;
         const vy = (dy / dist) * speed;
-        state.projectiles.push({
-          x: cx + (dx / dist) * 30,
-          y: cy + (dy / dist) * 30,
-          vx,
-          vy
-        });
+
+        // Lazaan: 3 flechas con diferentes ondas/fases
+        for (let i = -1; i <= 1; i++) {
+          state.projectiles.push({
+            x: cx + (dx / dist) * 30,
+            y: cy + (dy / dist) * 30,
+            vx,
+            vy: vy + i * 25,  // ligero spread vertical
+            waveOffset: i * Math.PI / 2,  // desfase para patrón ondulado
+            isLazaan: true
+          });
+        }
         state.marielaAngle = Math.atan2(dy, dx);
       };
 
@@ -1035,10 +1137,15 @@
           if (m.flash > 0) m.flash -= dt * 4;
         });
 
-        // Move projectiles (direction-based)
+        // Move projectiles (direction-based) with Lazaan wave motion
         state.projectiles.forEach((p) => {
           p.x += p.vx * dt;
           p.y += p.vy * dt;
+          // Movimiento ondulado tipo Lazaan (Hanabi)
+          if (p.isLazaan) {
+            p.waveOffset += dt * 12;
+            p.y += Math.sin(p.waveOffset) * 60 * dt;
+          }
         });
 
         // Move particles
@@ -1092,23 +1199,35 @@
           return true;
         });
 
-        // Mariela auto-attacks tower when close
+        // Mariela auto-attacks tower when close (Lazaan a la torre)
         const towerX = W - TOWER_W - 30;
         const distToTower = Math.hypot(
           state.marielaX + MARIELA_W / 2 - (towerX + TOWER_W / 2),
           state.marielaY + MARIELA_H / 2 - (GROUND_Y - TOWER_H / 2)
         );
         if (
-          distToTower < 100 &&
+          distToTower < 120 &&
           state.wave >= 3 &&
           state.waveProgress >= cfg.total &&
           state.minions.length === 0 &&
           state.towerHP > 0
         ) {
-          if (Math.random() < dt * 2.5) {
-            state.towerHP = Math.max(0, state.towerHP - 1);
-            state.towerShake = 4;
-            spawnParticles(towerX + TOWER_W / 2, GROUND_Y - TOWER_H / 2, '#EF4444', 4);
+          if (Math.random() < dt * 3.5) {
+            state.towerHP = Math.max(0, state.towerHP - 5);  // Mucho más daño
+            state.towerShake = 6;
+            spawnParticles(towerX + TOWER_W / 2, GROUND_Y - TOWER_H / 2, '#A855F7', 8);
+            spawnParticles(towerX + TOWER_W / 2, GROUND_Y - TOWER_H / 2, '#EF4444', 6);
+            // Flecha visual hacia la torre
+            const arrowX = state.marielaX + MARIELA_W;
+            const arrowY = state.marielaY + MARIELA_H / 2;
+            for (let i = 0; i < 5; i++) {
+              spawnParticles(
+                arrowX + (towerX - arrowX) * (i / 5),
+                arrowY + (Math.random() - 0.5) * 30,
+                '#A855F7',
+                1
+              );
+            }
             updateTowerHUD();
           }
         }
