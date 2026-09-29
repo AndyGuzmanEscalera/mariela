@@ -549,7 +549,7 @@
         marielaVX: 0,
         marielaVY: 0,
         marielaAngle: 0,
-        towerHP: 100,
+        towerHP: 500,
         towerMax: 100,
         wave: 1,
         waveProgress: 0,
@@ -574,7 +574,7 @@
         state.marielaVY = 0;
         state.marielaAngle = 0;
         state.marielaHP = 3;
-        state.towerHP = 100;
+        state.towerHP = 500;
         state.wave = 1;
         state.waveProgress = 0;
         state.minions = [];
@@ -963,14 +963,67 @@
       const drawTower = () => {
         const towerX = W - TOWER_W - 30 + state.towerShake;
         const towerY = GROUND_Y - TOWER_H;
+        const hpRatio = state.towerHP / state.towerMax;
+
+        // Fases visuales según HP
+        // Fase 1: Sana (100%-60%) - gris/azul
+        // Fase 2: Dañada (60%-25%) - naranja/rojo
+        // Fase 3: Crítica (<25%) - rojo intenso + llamas
+
+        let bodyColor1, bodyColor2, windowColor, flagColor;
+        if (hpRatio > 0.6) {
+          bodyColor1 = '#1F2937'; bodyColor2 = '#374151';
+          windowColor = 'rgba(251, 191, 36, 0.85)';
+          flagColor = '#DC2626';
+        } else if (hpRatio > 0.25) {
+          bodyColor1 = '#7C2D12'; bodyColor2 = '#991B1B';
+          windowColor = 'rgba(251, 146, 60, 0.95)';
+          flagColor = '#EA580C';
+        } else {
+          bodyColor1 = '#450A0A'; bodyColor2 = '#7F1D1D';
+          windowColor = 'rgba(239, 68, 68, 1)';
+          flagColor = '#DC2626';
+        }
+
+        // Aura de la torre en fase crítica
+        if (hpRatio < 0.25) {
+          const auraGrad = ctx.createRadialGradient(
+            towerX + TOWER_W / 2, towerY + TOWER_H / 2, 10,
+            towerX + TOWER_W / 2, towerY + TOWER_H / 2, 90
+          );
+          auraGrad.addColorStop(0, 'rgba(239, 68, 68, 0.25)');
+          auraGrad.addColorStop(1, 'rgba(239, 68, 68, 0)');
+          ctx.fillStyle = auraGrad;
+          ctx.fillRect(towerX - 50, towerY - 30, TOWER_W + 100, TOWER_H + 60);
+        }
 
         // Tower body
         const towerGrad = ctx.createLinearGradient(towerX, 0, towerX + TOWER_W, 0);
-        towerGrad.addColorStop(0, '#1F2937');
-        towerGrad.addColorStop(0.5, '#374151');
-        towerGrad.addColorStop(1, '#1F2937');
+        towerGrad.addColorStop(0, bodyColor1);
+        towerGrad.addColorStop(0.5, bodyColor2);
+        towerGrad.addColorStop(1, bodyColor1);
         ctx.fillStyle = towerGrad;
         ctx.fillRect(towerX, towerY, TOWER_W, TOWER_H);
+
+        // Grietas en fase dañada/crítica
+        if (hpRatio <= 0.6) {
+          ctx.strokeStyle = 'rgba(0, 0, 0, 0.6)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(towerX + 5, towerY + 30);
+          ctx.lineTo(towerX + 15, towerY + 50);
+          ctx.lineTo(towerX + 10, towerY + 70);
+          ctx.moveTo(towerX + 50, towerY + 100);
+          ctx.lineTo(towerX + 45, towerY + 120);
+          ctx.lineTo(towerX + 55, towerY + 140);
+          if (hpRatio <= 0.25) {
+            ctx.moveTo(towerX + 40, towerY + 40);
+            ctx.lineTo(towerX + 50, towerY + 60);
+            ctx.moveTo(towerX + 20, towerY + 110);
+            ctx.lineTo(towerX + 30, towerY + 130);
+          }
+          ctx.stroke();
+        }
 
         // Stone outline
         ctx.strokeStyle = '#0F172A';
@@ -982,8 +1035,8 @@
         for (let i = 0; i < windowCount; i++) {
           const wx = towerX + 12;
           const wy = towerY + 20 + i * 40;
-          const glowAlpha = state.towerHP < 30 ? 0.4 : 0.8;
-          ctx.fillStyle = `rgba(251, 191, 36, ${glowAlpha})`;
+          const flicker = hpRatio < 0.3 ? (Math.sin(performance.now() / 80 + i) > 0.7 ? 0.4 : 1) : 1;
+          ctx.fillStyle = windowColor.replace(/[\d.]+\)$/, `${0.4 + flicker * 0.5})`);
           ctx.fillRect(wx, wy, TOWER_W - 24, 18);
           ctx.strokeStyle = '#92400E';
           ctx.lineWidth = 1.5;
@@ -998,7 +1051,7 @@
         }
 
         // Battlements (top)
-        ctx.fillStyle = '#374151';
+        ctx.fillStyle = bodyColor2;
         for (let i = 0; i < 5; i++) {
           const bx = towerX - 4 + i * 14;
           ctx.fillRect(bx, towerY - 12, 10, 14);
@@ -1006,7 +1059,8 @@
           ctx.strokeRect(bx, towerY - 12, 10, 14);
         }
 
-        // Flag
+        // Flag (con onda según daño)
+        const flagWave = Math.sin(performance.now() / 400) * 2;
         ctx.strokeStyle = '#92400E';
         ctx.lineWidth = 2;
         ctx.beginPath();
@@ -1014,26 +1068,63 @@
         ctx.lineTo(towerX + TOWER_W / 2, towerY - 60);
         ctx.stroke();
 
-        ctx.fillStyle = '#DC2626';
+        ctx.fillStyle = flagColor;
         ctx.beginPath();
-        ctx.moveTo(towerX + TOWER_W / 2, towerY - 60);
+        ctx.moveTo(towerX + TOWER_W / 2, towerY - 60 + flagWave);
         ctx.lineTo(towerX + TOWER_W / 2 + 24, towerY - 54);
-        ctx.lineTo(towerX + TOWER_W / 2, towerY - 48);
+        ctx.lineTo(towerX + TOWER_W / 2, towerY - 48 - flagWave);
         ctx.closePath();
         ctx.fill();
 
         // Eye/face on tower (gets angrier as HP drops)
         const faceY = towerY + TOWER_H / 2;
-        ctx.fillStyle = '#FBBF24';
+        const eyeSize = hpRatio > 0.5 ? 3 : hpRatio > 0.25 ? 4 : 5;
+        const eyeColor = hpRatio > 0.25 ? '#FBBF24' : '#EF4444';
+        // Glow de ojos en fase crítica
+        if (hpRatio < 0.25) {
+          ctx.fillStyle = 'rgba(239, 68, 68, 0.5)';
+          ctx.beginPath();
+          ctx.arc(towerX + TOWER_W / 2 - 6, faceY, 7, 0, Math.PI * 2);
+          ctx.arc(towerX + TOWER_W / 2 + 6, faceY, 7, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.fillStyle = eyeColor;
         ctx.beginPath();
-        ctx.arc(towerX + TOWER_W / 2 - 6, faceY, 3, 0, Math.PI * 2);
-        ctx.arc(towerX + TOWER_W / 2 + 6, faceY, 3, 0, Math.PI * 2);
+        ctx.arc(towerX + TOWER_W / 2 - 6, faceY, eyeSize, 0, Math.PI * 2);
+        ctx.arc(towerX + TOWER_W / 2 + 6, faceY, eyeSize, 0, Math.PI * 2);
         ctx.fill();
         ctx.fillStyle = '#000';
         ctx.beginPath();
-        ctx.arc(towerX + TOWER_W / 2 - 6, faceY, 1.5, 0, Math.PI * 2);
-        ctx.arc(towerX + TOWER_W / 2 + 6, faceY, 1.5, 0, Math.PI * 2);
+        ctx.arc(towerX + TOWER_W / 2 - 6, faceY, eyeSize / 2, 0, Math.PI * 2);
+        ctx.arc(towerX + TOWER_W / 2 + 6, faceY, eyeSize / 2, 0, Math.PI * 2);
         ctx.fill();
+
+        // Boca enojada en fase crítica
+        if (hpRatio < 0.4) {
+          ctx.strokeStyle = '#000';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.arc(towerX + TOWER_W / 2, faceY + 8, 6, Math.PI + 0.3, 2 * Math.PI - 0.3);
+          ctx.stroke();
+        }
+
+        // Llamas en fase crítica
+        if (hpRatio < 0.25) {
+          const flameTime = performance.now() / 100;
+          for (let i = 0; i < 4; i++) {
+            const fx = towerX + 6 + i * 16;
+            const fy = towerY - 8 + Math.sin(flameTime + i) * 3;
+            const fh = 6 + Math.sin(flameTime * 2 + i * 0.7) * 3;
+            ctx.fillStyle = i % 2 === 0 ? '#EF4444' : '#FBBF24';
+            ctx.beginPath();
+            ctx.moveTo(fx, fy);
+            ctx.quadraticCurveTo(fx - 4, fy - fh / 2, fx - 2, fy - fh);
+            ctx.quadraticCurveTo(fx, fy - fh - 3, fx + 2, fy - fh);
+            ctx.quadraticCurveTo(fx + 4, fy - fh / 2, fx, fy);
+            ctx.closePath();
+            ctx.fill();
+          }
+        }
       };
 
       const drawProjectile = (p: Projectile) => {
