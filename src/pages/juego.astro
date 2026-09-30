@@ -5,7 +5,9 @@
  * Quiz MOBA con emojis:
  *  · 10 preguntas: 3 emojis con pop escalonado + flotación.
  *  · Racha (🔥 xN) con bonus creciente y bonus por rapidez.
- *  · Confeti + puntos flotantes al acertar; shake al fallar.
+ *  · Confeti + puntos flotantes al acertar; shake del marco al fallar.
+ *  · Medidor de bonus por rapidez (⚡ +50) como en un MOBA.
+ *  · Bienvenida con Mariela en canvas (misma presentación que juego 4).
  *  · Dots de progreso verde/rojo por pregunta.
  *  · Estrellas 0–3 al final según aciertos + mejor puntaje
  *    guardado en localStorage.
@@ -50,17 +52,22 @@
           </div>
           <h1 class="quiz-title">Adivina el Héroe</h1>
           <p class="quiz-subtitle">
-            Tres emojis mágicos describen a un héroe.
+            Tres emojis describen un rol de Mobile Legends
+            (Tanque, Luchador, Asesino, Mago, Tirador o Soporte).
             <br />
-            ¿Puedes leerlos tan bien como lees una partida?
+            ¿Los reconoces como en el filtro del juego?
           </p>
 
-          <div class="demo-trio" aria-hidden="true">
-            <span class="demo-emoji" id="demo-e1">🛡️</span>
-            <span class="demo-plus">+</span>
-            <span class="demo-emoji" id="demo-e2">💪</span>
-            <span class="demo-plus">+</span>
-            <span class="demo-emoji" id="demo-e3">⚔️</span>
+          <div class="hero-presentation">
+            <div class="hero-preview-wrap">
+              <canvas id="hero-preview" width="140" height="150"></canvas>
+              <div class="rune-orbit" aria-hidden="true">
+                <span class="orbit-emoji" id="orbit-e1">🛡️</span>
+                <span class="orbit-emoji" id="orbit-e2">🐢</span>
+                <span class="orbit-emoji" id="orbit-e3">🧱</span>
+              </div>
+            </div>
+            <p class="hero-caption">Mariela · Lectora de runas</p>
           </div>
 
           <div class="welcome-meta">
@@ -77,6 +84,21 @@
             <div class="meta-item">
               <span class="meta-num">⭐</span>
               <span class="meta-label">hasta 3 estrellas</span>
+            </div>
+          </div>
+
+          <div class="controls-preview">
+            <div class="ctrl-item">
+              <span class="ctrl-key">CLICK</span>
+              <span class="ctrl-label">Responder</span>
+            </div>
+            <div class="ctrl-item">
+              <span class="ctrl-key">🔥</span>
+              <span class="ctrl-label">Racha bonus</span>
+            </div>
+            <div class="ctrl-item">
+              <span class="ctrl-key">⚡</span>
+              <span class="ctrl-label">Rapidez +50</span>
             </div>
           </div>
 
@@ -112,14 +134,24 @@
           </div>
           <div class="dots-row" id="dots-row"></div>
 
-          <div class="rune-frame">
-            <p class="rune-label">Esta runa describe a un héroe…</p>
-            <div class="rune-emojis" id="rune-emojis">
-              <span>🛡️</span><span class="plus">+</span><span>💪</span><span class="plus">+</span><span>⚔️</span>
+          <div class="speed-meter" id="speed-meter">
+            <div class="speed-meter-head">
+              <span class="speed-label">Bonus rapidez</span>
+              <span class="speed-bonus-tag" id="speed-tag">⚡ +50</span>
+            </div>
+            <div class="speed-track">
+              <div class="speed-fill" id="speed-fill"></div>
             </div>
           </div>
 
-          <p class="options-label">¿Qué clase de héroe es?</p>
+          <div class="rune-frame">
+            <p class="rune-label">Esta runa describe a un héroe…</p>
+            <div class="rune-emojis" id="rune-emojis">
+              <span>🏹</span><span class="plus">+</span><span>🎯</span><span class="plus">+</span><span>📏</span>
+            </div>
+          </div>
+
+          <p class="options-label">¿Qué rol de ML es?</p>
           <div class="options-grid" id="options-grid"></div>
 
           <div class="feedback hidden" id="feedback"></div>
@@ -140,6 +172,7 @@
 
         {/* ============ PANTALLA 4: Resultado ============ */}
         <section id="screen-result" class="screen">
+          <div class="result-crown" id="result-crown">🎮</div>
           <div class="stars-row" id="stars-row">
             <span class="star">★</span><span class="star">★</span><span class="star">★</span>
           </div>
@@ -230,6 +263,16 @@
         position: relative;
         overflow: hidden;
       }
+      .quiz-frame.is-shaking {
+        animation: frameShake 0.48s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+      }
+      @keyframes frameShake {
+        0%, 100% { transform: translate(0, 0) rotate(0deg); }
+        15% { transform: translate(-5px, 2px) rotate(-0.4deg); }
+        30% { transform: translate(5px, -2px) rotate(0.4deg); }
+        45% { transform: translate(-4px, 1px) rotate(-0.3deg); }
+        60% { transform: translate(4px, -1px) rotate(0.3deg); }
+      }
       .quiz-frame::before {
         content: '';
         position: absolute;
@@ -290,28 +333,70 @@
         margin: 0 0 24px;
       }
 
-      /* Trío demo (welcome) */
-      .demo-trio {
+      /* Presentación Mariela (welcome) — alineado con juego 4 */
+      .hero-presentation {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 16px;
+      }
+      .hero-preview-wrap {
+        position: relative;
+        width: 140px;
+        height: 150px;
+      }
+      #hero-preview {
+        width: 140px;
+        height: 150px;
+        filter: drop-shadow(0 10px 26px rgba(255, 212, 102, 0.35));
+      }
+      .rune-orbit {
+        position: absolute;
+        inset: -8px -18px;
+        pointer-events: none;
+      }
+      .orbit-emoji {
+        position: absolute;
+        font-size: 22px;
+        filter: drop-shadow(0 3px 10px rgba(240, 171, 252, 0.55));
+        animation: emojiFloat 3s ease-in-out infinite;
+      }
+      .orbit-emoji:nth-child(1) { top: 8px; left: -4px; animation-delay: 0s; }
+      .orbit-emoji:nth-child(2) { top: 42px; right: -8px; animation-delay: 0.35s; }
+      .orbit-emoji:nth-child(3) { bottom: 18px; left: 6px; animation-delay: 0.7s; }
+      .hero-caption {
+        font-family: 'Cinzel', serif;
+        font-size: 12px;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: rgba(255, 212, 102, 0.85);
+        margin: 8px 0 0;
+      }
+
+      .controls-preview {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-bottom: 14px;
+      }
+      .ctrl-item {
         display: flex;
         align-items: center;
-        justify-content: center;
-        gap: 12px;
-        font-size: clamp(44px, 9vw, 62px);
-        margin-bottom: 18px;
-        filter: drop-shadow(0 6px 22px rgba(255, 212, 102, 0.35));
+        gap: 8px;
+        padding: 7px 14px;
+        background: rgba(255, 252, 242, 0.045);
+        border: 1px solid rgba(255, 212, 102, 0.22);
+        border-radius: 999px;
+        font-size: 12px;
       }
-      .demo-emoji {
-        display: inline-block;
-        animation: emojiPop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) backwards, emojiFloat 3s ease-in-out 0.55s infinite;
-      }
-      .demo-emoji:nth-child(1) { animation-delay: 0.05s, 0.6s; }
-      .demo-emoji:nth-child(2) { animation-delay: 0.16s, 0.7s; }
-      .demo-emoji:nth-child(3) { animation-delay: 0.27s, 0.8s; }
-      .demo-plus {
-        font-size: 26px;
-        color: rgba(240, 171, 252, 0.8);
+      .ctrl-key {
         font-family: 'Cinzel', serif;
+        font-weight: 700;
+        color: #FFD466;
+        letter-spacing: 0.05em;
       }
+      .ctrl-label { color: rgba(255, 252, 242, 0.75); font-size: 11px; }
 
       @keyframes emojiPop {
         from { opacity: 0; transform: scale(0.2) rotate(-18deg); }
@@ -449,6 +534,51 @@
       }
       .q-dot.is-right { background: #4ADE80; box-shadow: 0 0 8px rgba(74, 222, 128, 0.6); }
       .q-dot.is-wrong { background: #EF4444; box-shadow: 0 0 8px rgba(239, 68, 68, 0.6); }
+
+      .speed-meter {
+        margin-bottom: 12px;
+        padding: 0 4px;
+      }
+      .speed-meter-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 5px;
+      }
+      .speed-label {
+        font-size: 10px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: rgba(255, 212, 102, 0.72);
+      }
+      .speed-bonus-tag {
+        font-family: 'Cinzel', serif;
+        font-size: 11px;
+        font-weight: 700;
+        color: rgba(255, 252, 242, 0.45);
+        transition: color 0.2s, text-shadow 0.2s;
+      }
+      .speed-bonus-tag.is-active {
+        color: #FBBF24;
+        text-shadow: 0 0 12px rgba(251, 191, 36, 0.75);
+      }
+      .speed-track {
+        height: 6px;
+        background: rgba(255, 252, 242, 0.08);
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      .speed-fill {
+        height: 100%;
+        width: 100%;
+        background: linear-gradient(90deg, #FBBF24 0%, #F0ABFC 100%);
+        border-radius: 999px;
+        transition: width 0.08s linear;
+        box-shadow: 0 0 12px rgba(251, 191, 36, 0.45);
+      }
+      .speed-fill.is-hot {
+        box-shadow: 0 0 16px rgba(240, 171, 252, 0.65);
+      }
 
       /* Runa de emojis */
       .rune-frame {
@@ -690,6 +820,18 @@
       .role-luchador { --role-glow: rgba(245, 158, 11, 0.3); }
 
       /* ============ Resultado ============ */
+      .result-crown {
+        font-size: clamp(44px, 10vw, 56px);
+        line-height: 1;
+        margin-bottom: 4px;
+        filter: drop-shadow(0 6px 20px rgba(255, 212, 102, 0.45));
+        animation: crownBob 2.8s ease-in-out infinite;
+      }
+      @keyframes crownBob {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-5px); }
+      }
+
       .stars-row {
         font-size: 44px;
         letter-spacing: 6px;
@@ -784,50 +926,52 @@
 
       type Heroine = { name: string; role: string; roleClass: string; emoji: string };
 
+      // Roles oficiales MLBB (filtro de héroes en español): Tanque, Luchador,
+      // Asesino, Mago, Tirador, Soporte.
       const questions: HeroQuestion[] = [
-        { emojis: ['🛡️', '💪', '⚔️'], answer: 'Tank',
-          options: ['Tank', 'Maga', 'Asesina', 'Apoyo'],
-          hint: 'Defiende al equipo y aguanta todo el daño' },
-        { emojis: ['🧙‍♀️', '🔮', '✨'], answer: 'Maga',
-          options: ['Tirador', 'Maga', 'Luchadora', 'Apoyo'],
-          hint: 'Lanza hechizos devastadores desde lejos' },
-        { emojis: ['🏹', '🌿', '👁️'], answer: 'Tirador',
-          options: ['Tank', 'Apoyo', 'Tirador', 'Maga'],
-          hint: 'Ataca desde lejos con precisión mortal' },
-        { emojis: ['🗡️', '🌙', '⚡'], answer: 'Asesina',
-          options: ['Maga', 'Asesina', 'Tank', 'Tirador'],
-          hint: 'Rápida, letal y aparece de la nada' },
-        { emojis: ['💖', '🌸', '🤲'], answer: 'Apoyo',
-          options: ['Apoyo', 'Asesina', 'Luchadora', 'Tirador'],
-          hint: 'Cura al equipo y lo hace más fuerte' },
-        { emojis: ['🥋', '👊', '🔥'], answer: 'Luchador',
-          options: ['Tank', 'Luchador', 'Maga', 'Apoyo'],
-          hint: 'Cuerpo a cuerpo, no se rinde nunca' },
-        { emojis: ['❄️', '🌊', '🐉'], answer: 'Maga',
-          options: ['Tank', 'Tirador', 'Luchador', 'Maga'],
-          hint: 'Congela y controla a los enemigos' },
-        { emojis: ['🌺', '⚔️', '🛡️'], answer: 'Luchador',
-          options: ['Asesina', 'Luchador', 'Apoyo', 'Tank'],
-          hint: 'Ataca con espadas y poder de tierra' },
-        { emojis: ['👑', '💫', '✨'], answer: 'Maga',
-          options: ['Tirador', 'Maga', 'Luchador', 'Asesina'],
-          hint: 'Controla el tiempo y los elementos' },
-        { emojis: ['🐺', '⚡', '🌙'], answer: 'Asesina',
-          options: ['Tank', 'Apoyo', 'Asesina', 'Tirador'],
-          hint: 'Salta entre sombras y ataca por sorpresa' }
+        { emojis: ['🛡️', '🐢', '🧱'], answer: 'Tanque',
+          options: ['Tanque', 'Mago', 'Asesino', 'Soporte'],
+          hint: 'Rol Tanque: aguanta daño, abre pelea y protege al carry (roam o EXP)' },
+        { emojis: ['🧙‍♀️', '🔮', '💥'], answer: 'Mago',
+          options: ['Tirador', 'Mago', 'Luchador', 'Soporte'],
+          hint: 'Rol Mago: burst mágico y control desde mid lane' },
+        { emojis: ['🏹', '🎯', '📏'], answer: 'Tirador',
+          options: ['Tanque', 'Soporte', 'Tirador', 'Mago'],
+          hint: 'Rol Tirador (marksman): farmea gold lane y daño físico a distancia' },
+        { emojis: ['🗡️', '🌑', '💨'], answer: 'Asesino',
+          options: ['Mago', 'Asesino', 'Tanque', 'Tirador'],
+          hint: 'Rol Asesino: jungla o pick, entra y elimina objetivos frágiles' },
+        { emojis: ['💚', '➕', '🤝'], answer: 'Soporte',
+          options: ['Soporte', 'Asesino', 'Luchador', 'Tirador'],
+          hint: 'Rol Soporte: cura, escudo y utilidad para el equipo (roam)' },
+        { emojis: ['🥊', '👊', '⚔️'], answer: 'Luchador',
+          options: ['Tanque', 'Luchador', 'Mago', 'Soporte'],
+          hint: 'Rol Luchador: pelea sostenida en EXP lane, daño y resistencia' },
+        { emojis: ['❄️', '🌀', '⛓️'], answer: 'Mago',
+          options: ['Tanque', 'Tirador', 'Luchador', 'Mago'],
+          hint: 'Rol Mago: CC y control de zona en teamfight' },
+        { emojis: ['🔥', '🥋', '💪'], answer: 'Luchador',
+          options: ['Asesino', 'Luchador', 'Soporte', 'Tanque'],
+          hint: 'Rol Luchador: duelos largos y presión en la sideline' },
+        { emojis: ['🌩️', '🔥', '🌊'], answer: 'Mago',
+          options: ['Tirador', 'Mago', 'Luchador', 'Asesino'],
+          hint: 'Rol Mago: daño mágico por habilidades (no autoataque)' },
+        { emojis: ['🐆', '⚡', '🗡️'], answer: 'Asesino',
+          options: ['Tanque', 'Soporte', 'Asesino', 'Tirador'],
+          hint: 'Rol Asesino: movilidad alta y burst para borrar carries' }
       ];
 
       const heroines: Heroine[] = [
-        { name: 'Hanabi', role: 'Tiradora', roleClass: 'role-tiradora', emoji: '🏹' },
-        { name: 'Miya', role: 'Tiradora', roleClass: 'role-tiradora', emoji: '🌟' },
-        { name: 'Pharsa', role: 'Maga', roleClass: 'role-maga', emoji: '🔥' },
-        { name: 'Luo Yi', role: 'Maga', roleClass: 'role-maga', emoji: '🌙' },
-        { name: 'Estes', role: 'Apoyo', roleClass: 'role-apoyo', emoji: '💚' },
-        { name: 'Guinevere', role: 'Maga', roleClass: 'role-maga', emoji: '👸' },
-        { name: 'Fanny', role: 'Asesina', roleClass: 'role-asesina', emoji: '🗡️' },
-        { name: 'Kagura', role: 'Maga', roleClass: 'role-maga', emoji: '🧙‍♀️' },
+        { name: 'Hanabi', role: 'Tirador', roleClass: 'role-tiradora', emoji: '🏹' },
+        { name: 'Miya', role: 'Tirador', roleClass: 'role-tiradora', emoji: '🌟' },
+        { name: 'Pharsa', role: 'Mago', roleClass: 'role-maga', emoji: '🔥' },
+        { name: 'Luo Yi', role: 'Mago', roleClass: 'role-maga', emoji: '🌙' },
+        { name: 'Estes', role: 'Soporte', roleClass: 'role-apoyo', emoji: '💚' },
+        { name: 'Guinevere', role: 'Mago', roleClass: 'role-maga', emoji: '👸' },
+        { name: 'Fanny', role: 'Asesino', roleClass: 'role-asesina', emoji: '🗡️' },
+        { name: 'Kagura', role: 'Mago', roleClass: 'role-maga', emoji: '🧙‍♀️' },
         { name: 'Chou', role: 'Luchador', roleClass: 'role-luchador', emoji: '🥋' },
-        { name: 'Angela', role: 'Apoyo', roleClass: 'role-apoyo', emoji: '💖' }
+        { name: 'Angela', role: 'Soporte', roleClass: 'role-apoyo', emoji: '💖' }
       ];
 
       const heroineMessages: Record<string, string> = {
@@ -892,8 +1036,11 @@
       const hudQuestion = document.getElementById('hud-question')!;
       const hudStreak = document.getElementById('hud-streak')!;
       const hudScore = document.getElementById('hud-score')!;
+      const speedFill = document.getElementById('speed-fill')!;
+      const speedTag = document.getElementById('speed-tag')!;
 
       const BEST_KEY = 'mlquiz_best_v1';
+      let speedRaf = 0;
 
       // ============================================================
       // EFECTOS (confeti + puntos flotantes)
@@ -970,6 +1117,45 @@
         hudScore.classList.add('is-bump');
       }
 
+      function shakeFrame() {
+        frame.classList.remove('is-shaking');
+        void frame.offsetWidth;
+        frame.classList.add('is-shaking');
+        window.setTimeout(() => frame.classList.remove('is-shaking'), 500);
+      }
+
+      function stopSpeedMeter() {
+        if (speedRaf) cancelAnimationFrame(speedRaf);
+        speedRaf = 0;
+      }
+
+      function startSpeedMeter() {
+        stopSpeedMeter();
+        speedFill.style.width = '100%';
+        speedFill.classList.add('is-hot');
+        speedTag.classList.add('is-active');
+
+        const tick = () => {
+          const elapsed = (performance.now() - state.qStart) / 1000;
+          const remaining = Math.max(0, 1 - elapsed / SPEED_TIME);
+          speedFill.style.width = `${remaining * 100}%`;
+          speedFill.classList.toggle('is-hot', remaining > 0.2);
+          speedTag.classList.toggle('is-active', remaining > 0);
+
+          if (
+            remaining > 0 &&
+            screens.game?.classList.contains('screen-active') &&
+            state.qIndex < total
+          ) {
+            speedRaf = requestAnimationFrame(tick);
+          } else {
+            speedRaf = 0;
+            if (remaining <= 0) speedFill.style.width = '0%';
+          }
+        };
+        speedRaf = requestAnimationFrame(tick);
+      }
+
       // ============================================================
       // RENDER DE PREGUNTA
       // ============================================================
@@ -1004,12 +1190,14 @@
 
         updateHUD();
         syncDots(dotsRow);
+        startSpeedMeter();
       }
 
       // ============================================================
       // RESPUESTA
       // ============================================================
       function handleAnswer(btn: HTMLButtonElement, q: HeroQuestion) {
+        stopSpeedMeter();
         const allBtns = optionsGrid.querySelectorAll<HTMLButtonElement>('.option-btn');
         allBtns.forEach((b) => (b.disabled = true));
 
@@ -1055,6 +1243,7 @@
           if (correctBtn) correctBtn.classList.add('is-correct');
           feedbackEl.textContent = `😅 Casi… era “${q.answer}”. ${q.hint}`;
           feedbackEl.className = 'feedback wrong';
+          shakeFrame();
         }
 
         feedbackEl.classList.remove('hidden');
@@ -1120,6 +1309,9 @@
         const stamp = document.getElementById('result-stamp')!;
         stamp.textContent =
           stars === 3 ? '¡Perfecto!' : stars === 2 ? '¡Muy bien!' : stars === 1 ? '¡Bien!' : 'Resultado';
+
+        const crown = document.getElementById('result-crown')!;
+        crown.textContent = stars === 3 ? '🏆' : stars === 2 ? '⭐' : stars === 1 ? '👑' : '💪';
 
         const titleEl = document.getElementById('result-heroine')!;
         const h = heroines.find((x) => x.name === state.heroine);
@@ -1192,12 +1384,12 @@
       }
 
       // ============================================================
-      // DEMO (welcome): trío de emojis que rota
+      // DEMO (welcome): runas orbitando alrededor de Mariela
       // ============================================================
-      function startDemo() {
-        const e1 = document.getElementById('demo-e1')!;
-        const e2 = document.getElementById('demo-e2')!;
-        const e3 = document.getElementById('demo-e3')!;
+      function startOrbitDemo() {
+        const e1 = document.getElementById('orbit-e1')!;
+        const e2 = document.getElementById('orbit-e2')!;
+        const e3 = document.getElementById('orbit-e3')!;
         let i = 0;
         const tick = () => {
           const q = questions[i % questions.length];
@@ -1211,6 +1403,132 @@
         };
         tick();
         window.setInterval(tick, 2400);
+      }
+
+      // ============================================================
+      // PREVIEW MARIELA (canvas — misma figura que juego 4)
+      // ============================================================
+      function drawHeroPreview() {
+        const pc = document.getElementById('hero-preview') as HTMLCanvasElement | null;
+        if (!pc) return;
+        const pctx = pc.getContext('2d')!;
+        const pdpr = Math.min(2, window.devicePixelRatio || 1);
+        pc.width = 140 * pdpr;
+        pc.height = 150 * pdpr;
+        pctx.setTransform(pdpr, 0, 0, pdpr, 0, 0);
+
+        const draw = () => {
+          const t = performance.now() / 1000;
+          pctx.clearRect(0, 0, 140, 150);
+
+          pctx.fillStyle = 'rgba(92, 58, 30, 0.6)';
+          pctx.beginPath(); pctx.ellipse(70, 132, 34, 7, 0, 0, Math.PI * 2); pctx.fill();
+
+          const aura = pctx.createRadialGradient(70, 70, 8, 70, 70, 72);
+          aura.addColorStop(0, 'rgba(168, 85, 247, 0.25)');
+          aura.addColorStop(0.6, 'rgba(255, 212, 102, 0.2)');
+          aura.addColorStop(1, 'rgba(255, 212, 102, 0)');
+          pctx.fillStyle = aura;
+          pctx.fillRect(0, 0, 140, 150);
+
+          pctx.save();
+          pctx.translate(70, 76 + Math.sin(t * 2.2) * 1.6);
+          pctx.scale(1.15, 1.15);
+
+          const skirtSway = Math.sin(t * 2.2) * 1.6;
+          const hairSway = Math.sin(t * 2) * 1.6;
+
+          const cape = pctx.createLinearGradient(-16, -14, -26, 24);
+          cape.addColorStop(0, '#8B5CF6'); cape.addColorStop(1, '#5B21B6');
+          pctx.fillStyle = cape;
+          pctx.beginPath();
+          pctx.moveTo(-13, -14);
+          pctx.quadraticCurveTo(-21, 2, -18 - Math.sin(t * 1.8) * 2, 22);
+          pctx.quadraticCurveTo(-6, 25, 12, 22);
+          pctx.lineTo(13, -14);
+          pctx.closePath(); pctx.fill();
+
+          const dress = pctx.createLinearGradient(0, -14, 0, 28);
+          dress.addColorStop(0, '#FCD34D'); dress.addColorStop(0.65, '#F5B028'); dress.addColorStop(1, '#B45309');
+          pctx.fillStyle = dress;
+          pctx.beginPath();
+          pctx.moveTo(-10, -12); pctx.lineTo(10, -12);
+          pctx.quadraticCurveTo(13 + skirtSway, 8, 11 + skirtSway, 26);
+          pctx.quadraticCurveTo(0, 30, -11 + skirtSway * 0.6, 26);
+          pctx.quadraticCurveTo(-13 + skirtSway * 0.6, 8, -10, -12);
+          pctx.closePath(); pctx.fill();
+          pctx.strokeStyle = '#92400E'; pctx.lineWidth = 1.5; pctx.stroke();
+
+          pctx.fillStyle = '#A56B0E';
+          pctx.fillRect(-8, 26, 6, 6);
+          pctx.fillRect(3, 26, 6, 6);
+          pctx.fillStyle = '#451A03';
+          pctx.fillRect(-9, 30, 8, 3);
+          pctx.fillRect(2, 30, 8, 3);
+
+          pctx.strokeStyle = '#6D28D9'; pctx.lineWidth = 2.4;
+          pctx.beginPath(); pctx.moveTo(-10, -2); pctx.lineTo(10, -2); pctx.stroke();
+          pctx.fillStyle = '#F0ABFC';
+          pctx.beginPath(); pctx.arc(0, -2, 2.4, 0, Math.PI * 2); pctx.fill();
+
+          pctx.fillStyle = '#451A03';
+          pctx.beginPath(); pctx.ellipse(0, -18, 11.5, 10.5, 0, 0, Math.PI * 2); pctx.fill();
+
+          pctx.fillStyle = '#FEF3C7';
+          pctx.strokeStyle = '#D97706'; pctx.lineWidth = 1.4;
+          pctx.beginPath(); pctx.arc(0, -20, 10.5, 0, Math.PI * 2); pctx.fill(); pctx.stroke();
+
+          pctx.fillStyle = '#451A03';
+          pctx.beginPath();
+          pctx.arc(0, -23, 10.8, Math.PI * 0.95, Math.PI * 2.05);
+          pctx.quadraticCurveTo(6, -24, 8 - hairSway * 0.4, -18);
+          pctx.quadraticCurveTo(4, -14, 2, -22);
+          pctx.quadraticCurveTo(-2, -24, -6, -22);
+          pctx.quadraticCurveTo(-9, -20, -10.5, -17);
+          pctx.quadraticCurveTo(-11, -22, -8, -25);
+          pctx.closePath(); pctx.fill();
+
+          pctx.fillStyle = '#FFD466';
+          pctx.strokeStyle = '#B45309'; pctx.lineWidth = 1.2;
+          pctx.fillRect(-9.5, -33, 19, 4.6);
+          pctx.strokeRect(-9.5, -33, 19, 4.6);
+          pctx.beginPath();
+          pctx.moveTo(-9.5, -33); pctx.lineTo(-6.5, -38.5); pctx.lineTo(-3.5, -33);
+          pctx.lineTo(0, -39.5); pctx.lineTo(3.5, -33);
+          pctx.lineTo(6.5, -38.5); pctx.lineTo(9.5, -33);
+          pctx.closePath(); pctx.fill(); pctx.stroke();
+          pctx.fillStyle = '#DC2626';
+          pctx.beginPath(); pctx.arc(0, -35.5, 2.4, 0, Math.PI * 2); pctx.fill();
+
+          pctx.fillStyle = '#1F2937';
+          pctx.beginPath();
+          pctx.ellipse(-3.6, -20, 1.9, 2.4, 0, 0, Math.PI * 2);
+          pctx.ellipse(3.6, -20, 1.9, 2.4, 0, 0, Math.PI * 2);
+          pctx.fill();
+          pctx.fillStyle = '#FFFCF2';
+          pctx.beginPath(); pctx.arc(-3, -21, 0.8, 0, Math.PI * 2); pctx.arc(4.2, -21, 0.8, 0, Math.PI * 2); pctx.fill();
+          pctx.fillStyle = 'rgba(244, 114, 182, 0.4)';
+          pctx.beginPath(); pctx.arc(-6.4, -16.6, 2.4, 0, Math.PI * 2); pctx.arc(6.4, -16.6, 2.4, 0, Math.PI * 2); pctx.fill();
+          pctx.strokeStyle = '#7C2D12'; pctx.lineWidth = 1.3; pctx.lineCap = 'round';
+          pctx.beginPath(); pctx.arc(0, -17, 3.2, 0.3, Math.PI - 0.3); pctx.stroke();
+
+          // pergamino / runa en lugar del arco (tema quiz)
+          pctx.save();
+          pctx.translate(8, -8);
+          pctx.rotate(0.15 + Math.sin(t * 1.4) * 0.06);
+          pctx.fillStyle = '#FFFCF2';
+          pctx.strokeStyle = '#D97706'; pctx.lineWidth = 1.2;
+          pctx.fillRect(-2, -10, 16, 20);
+          pctx.strokeRect(-2, -10, 16, 20);
+          pctx.fillStyle = '#F0ABFC';
+          pctx.font = '11px serif';
+          pctx.fillText('?', 4, 2);
+          pctx.restore();
+
+          pctx.restore();
+          requestAnimationFrame(draw);
+        };
+        draw();
       }
 
       // ============================================================
@@ -1232,7 +1550,8 @@
 
       updateBestLine();
       buildDots();
-      startDemo();
+      startOrbitDemo();
+      drawHeroPreview();
     </script>
   </body>
 </html>
