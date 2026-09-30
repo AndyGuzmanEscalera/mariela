@@ -3,7 +3,7 @@
  * /cumple — Semana de cumpleaños de Mariela
  * ----------------------------------------------------
  * Del Martes 29 Sept al Domingo 4 Oct (su cumpleaños).
- * Cada día se desbloquea una carta nueva a las 06:00 hs.
+ * Cada día se desbloquea una carta nueva a las 00:00 hs (medianoche local).
  *
  * ⚠️  PROTOTIPO: las cartas de Miércoles a Domingo tienen
  *     texto de placeholder. Edita el array `days` abajo
@@ -1156,10 +1156,10 @@ const days = [
 
       const cards = Array.from(document.querySelectorAll<HTMLElement>('.letter-card'));
 
-      // Tiempo de desbloqueo: cada día a las 06:00 hs local.
+      // Tiempo de desbloqueo: cada día a las 00:00 hs local (medianoche).
       const getUnlockTime = (dateStr: string): Date => {
         const [y, m, d] = dateStr.split('-').map(Number);
-        return new Date(y, m - 1, d, 6, 0, 0);
+        return new Date(y, m - 1, d, 0, 0, 0);
       };
 
       // Debug: ?unlock=all desbloquea TODAS las cartas (solo para testing local)
@@ -1194,7 +1194,7 @@ const days = [
           const unlock = getUnlockTime(date);
           const dd = String(unlock.getDate()).padStart(2, '0');
           const mm = String(unlock.getMonth() + 1).padStart(2, '0');
-          badge.textContent = `Disponible ${dd}/${mm} · 06:00`;
+          badge.textContent = `Disponible ${dd}/${mm} · 00:00`;
         }
       });
 
