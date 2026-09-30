@@ -1,14 +1,17 @@
 ---
 /**
- * /juego — Mini-juego Mobile Legends temático (VERSIÓN ÉPICA)
- * ------------------------------------------------------------
- * Ronda 1: "Reconocé los items ML" — 6 preguntas con SVGs
- *          de objetos del juego (escudo, espada, staff, etc.)
- * Ronda 2: "Adivina el héroe" — 8 preguntas con emojis
- * Final: "¿Cuál es tu heroína favorita?"
+ * /juego — "Adivina el Héroe" · Edición Profesional
+ * ---------------------------------------------------------
+ * Quiz MOBA con emojis:
+ *  · 10 preguntas: 3 emojis con pop escalonado + flotación.
+ *  · Racha (🔥 xN) con bonus creciente y bonus por rapidez.
+ *  · Confeti + puntos flotantes al acertar; shake al fallar.
+ *  · Dots de progreso verde/rojo por pregunta.
+ *  · Estrellas 0–3 al final según aciertos + mejor puntaje
+ *    guardado en localStorage.
+ *  · Elección final de heroína favorita con tarjetas grandes.
  *
- * Estilo MOBA con colores del juego. Cada respuesta se guarda
- * en el repo (vía Worker) para que Andy vea qué eligió.
+ * Resultado (heroína + puntaje) se guarda vía el Worker.
  */
 ---
 
@@ -17,106 +20,161 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5" />
-    <meta name="theme-color" content="#1A0F2E" />
+    <meta name="theme-color" content="#15081F" />
     <title>Adivina el Héroe · Para Mariela 🎮</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
   </head>
-  <body class="game-body">
+  <body class="quiz-body">
     <div class="magic-dust" aria-hidden="true">
-      {Array.from({ length: 50 }).map((_, i) => (
+      {Array.from({ length: 32 }).map((_, i) => (
         <span
           class="dust"
-          style={`top:${Math.random() * 100}%; left:${Math.random() * 100}%; animation-delay:${Math.random() * 5}s; animation-duration:${3 + Math.random() * 4}s;`}
+          style={`top:${Math.random() * 100}%; left:${Math.random() * 100}%; animation-delay:${(Math.random() * 6).toFixed(2)}s; animation-duration:${(3 + Math.random() * 4).toFixed(2)}s;`}
         ></span>
       ))}
     </div>
 
     <main class="relative z-10 min-h-screen flex items-center justify-center px-4 py-6">
-      <div class="game-frame">
+      <div class="quiz-frame" id="quiz-frame">
 
         {/* ============ PANTALLA 1: Bienvenida ============ */}
         <section id="screen-welcome" class="screen screen-active">
           <div class="welcome-badge">
             <span>🎮</span>
-            <span>Mobile Legends Adventure</span>
+            <span>Mobile Legends · Quiz</span>
           </div>
-          <h1 class="game-title">Adivina el Héroe</h1>
-          <p class="game-subtitle">
-            2 rondas, 14 preguntas y una sorpresa final.
+          <h1 class="quiz-title">Adivina el Héroe</h1>
+          <p class="quiz-subtitle">
+            Tres emojis mágicos describen a un héroe.
             <br />
-            ¿Lista para la aventura, Mariela?
+            ¿Puedes leerlos tan bien como lees una partida?
           </p>
-          <div class="round-preview">
-            <div class="round-preview-item">
-              <span class="round-num">🎮</span>
-              <span class="round-label">Adivina el héroe</span>
-              <span class="round-count">10 preguntas con emojis</span>
+
+          <div class="demo-trio" aria-hidden="true">
+            <span class="demo-emoji" id="demo-e1">🛡️</span>
+            <span class="demo-plus">+</span>
+            <span class="demo-emoji" id="demo-e2">💪</span>
+            <span class="demo-plus">+</span>
+            <span class="demo-emoji" id="demo-e3">⚔️</span>
+          </div>
+
+          <div class="welcome-meta">
+            <div class="meta-item">
+              <span class="meta-num">10</span>
+              <span class="meta-label">preguntas</span>
+            </div>
+            <div class="meta-sep">·</div>
+            <div class="meta-item">
+              <span class="meta-num">🔥</span>
+              <span class="meta-label">rachas</span>
+            </div>
+            <div class="meta-sep">·</div>
+            <div class="meta-item">
+              <span class="meta-num">⭐</span>
+              <span class="meta-label">hasta 3 estrellas</span>
             </div>
           </div>
+
+          <p class="best-score hidden" id="best-score-line">
+            🏆 Tu mejor puntaje: <strong id="best-score-value">0</strong>
+          </p>
+
           <button id="btn-start" type="button" class="game-btn">
-            <span>Empezar</span>
+            <span>Empezar el quiz</span>
             <span class="text-xl">⚔️</span>
           </button>
         </section>
 
-        {/* ============ PANTALLA 2: Juego ============ */}
+        {/* ============ PANTALLA 2: Quiz ============ */}
         <section id="screen-game" class="screen">
-          <div class="game-progress">
-            <div class="progress-info">
-              <span class="round-label-top">Adivina el héroe</span>
-              <span id="round-counter" class="round-counter">Pregunta 1 / 10</span>
+          <div class="hud-top">
+            <div class="hud-item">
+              <span class="hud-label">Pregunta</span>
+              <span class="hud-strong" id="hud-question">1 / 10</span>
             </div>
-            <div class="progress-track">
-              <div id="progress-fill" class="progress-fill"></div>
+            <div class="hud-item">
+              <span class="hud-label">Racha</span>
+              <span class="hud-streak" id="hud-streak">—</span>
             </div>
-          </div>
-
-          {/* Emojis */}
-          <div id="rune-container" class="rune-container">
-            <div class="rune-frame">
-              <p class="rune-label">Esta runa mágica representa al héroe:</p>
-              <div id="rune-emojis" class="rune-emojis"></div>
+            <div class="hud-item">
+              <span class="hud-label">Puntaje</span>
+              <span class="hud-strong hud-score" id="hud-score">0</span>
             </div>
           </div>
 
-          <p class="options-label">Elegí una opción</p>
-          <div id="options-grid" class="options-grid"></div>
+          <div class="progress-track">
+            <div class="progress-fill" id="progress-fill"></div>
+          </div>
+          <div class="dots-row" id="dots-row"></div>
 
-          <div id="feedback" class="feedback hidden"></div>
+          <div class="rune-frame">
+            <p class="rune-label">Esta runa describe a un héroe…</p>
+            <div class="rune-emojis" id="rune-emojis">
+              <span>🛡️</span><span class="plus">+</span><span>💪</span><span class="plus">+</span><span>⚔️</span>
+            </div>
+          </div>
+
+          <p class="options-label">¿Qué clase de héroe es?</p>
+          <div class="options-grid" id="options-grid"></div>
+
+          <div class="feedback hidden" id="feedback"></div>
         </section>
 
-        {/* ============ PANTALLA 4: Pregunta final ============ */}
+        {/* ============ PANTALLA 3: Heroína favorita ============ */}
         <section id="screen-final" class="screen">
-          <div class="game-stamp">Última pregunta</div>
-          <h2 class="game-title">Y tu heroína favorita es...</h2>
-          <p class="game-subtitle">
-            Elegí la que más te guste. La que más sientes que eres tú.
+          <div class="welcome-badge">
+            <span>👑</span>
+            <span>Última pregunta</span>
+          </div>
+          <h2 class="quiz-title">Y tu heroína favorita es…</h2>
+          <p class="quiz-subtitle">
+            La que más sientes que eres tú cuando juegas.
           </p>
-          <div id="heroine-grid" class="heroine-grid"></div>
+          <div class="heroine-grid" id="heroine-grid"></div>
         </section>
 
-        {/* ============ PANTALLA 5: Resultado ============ */}
+        {/* ============ PANTALLA 4: Resultado ============ */}
         <section id="screen-result" class="screen">
-          <div class="result-crown">👑</div>
-          <p class="game-stamp">Tu elección</p>
-          <h2 id="result-title" class="game-title"></h2>
-          <p id="result-message" class="result-message"></p>
+          <div class="stars-row" id="stars-row">
+            <span class="star">★</span><span class="star">★</span><span class="star">★</span>
+          </div>
+          <p class="game-stamp" id="result-stamp">Resultado</p>
+          <h2 class="quiz-title" id="result-heroine">—</h2>
+
+          <div class="score-board">
+            <div class="stat-row">
+              <span class="stat-label">Puntaje</span>
+              <span class="stat-value" id="stat-score">0</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Aciertos</span>
+              <span class="stat-value" id="stat-correct">0 / 10</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Mejor racha</span>
+              <span class="stat-value" id="stat-streak">0</span>
+            </div>
+          </div>
+
+          <div class="dots-row result-dots" id="result-dots"></div>
+
+          <p class="result-message" id="result-message"></p>
+
           <div class="result-footer">
             <span class="line"></span>
             <span class="font-script text-2xl text-amber-300">Con amor, Andy</span>
             <span class="line"></span>
           </div>
-          <p class="result-stats">
-            🏆 Puntaje total: <strong id="final-score">0</strong> /
-            <strong id="final-total">14</strong>
-          </p>
+
+          <p class="new-best hidden" id="new-best">🏆 ¡Nuevo mejor puntaje!</p>
           <p class="result-note">💛 Guardé tu resultado en un lugar especial.</p>
-          <a href={`${import.meta.env.BASE_URL}juego4`} class="btn-play-game mt-5">
+
+          <a href={`${import.meta.env.BASE_URL}juego4`} class="btn-play-game mt-4">
             <span class="text-lg">🏹</span>
             <span>Jugar otra aventura</span>
             <span class="text-lg">⚔️</span>
@@ -127,15 +185,15 @@
     </main>
 
     <style is:global>
-      .game-body {
+      .quiz-body {
         margin: 0;
         min-height: 100vh;
         font-family: 'Inter', system-ui, sans-serif;
         color: #FFFCF2;
         background:
-          radial-gradient(ellipse at 20% 0%, rgba(245, 176, 40, 0.18) 0%, transparent 55%),
-          radial-gradient(ellipse at 80% 100%, rgba(138, 43, 226, 0.20) 0%, transparent 55%),
-          linear-gradient(180deg, #1A0F2E 0%, #2D1B4E 50%, #0F0820 100%);
+          radial-gradient(ellipse at 20% 0%, rgba(245, 176, 40, 0.16) 0%, transparent 55%),
+          radial-gradient(ellipse at 85% 100%, rgba(124, 58, 237, 0.2) 0%, transparent 55%),
+          linear-gradient(180deg, #15081F 0%, #241241 55%, #0F0820 100%);
         background-attachment: fixed;
         overflow-x: hidden;
       }
@@ -147,276 +205,330 @@
         background: #FFD466;
         border-radius: 50%;
         opacity: 0;
-        box-shadow: 0 0 6px rgba(255, 212, 102, 0.8);
+        box-shadow: 0 0 8px rgba(255, 212, 102, 0.9);
         animation: floatDust 6s ease-in-out infinite;
       }
       @keyframes floatDust {
         0%, 100% { opacity: 0; transform: translateY(0) scale(0.5); }
-        50% { opacity: 0.9; transform: translateY(-30px) scale(1.4); }
+        50% { opacity: 0.75; transform: translateY(-30px) scale(1.3); }
       }
 
-      .game-frame {
+      .quiz-frame {
         width: 100%;
-        max-width: 760px;
-        background: linear-gradient(135deg, rgba(45, 27, 78, 0.85) 0%, rgba(26, 15, 46, 0.85) 100%);
-        border: 1px solid rgba(255, 212, 102, 0.35);
-        border-radius: 28px;
-        padding: clamp(24px, 5vw, 48px);
+        max-width: 720px;
+        background: linear-gradient(135deg, rgba(45, 27, 78, 0.88) 0%, rgba(24, 13, 43, 0.88) 100%);
+        border: 1px solid rgba(255, 212, 102, 0.32);
+        border-radius: 26px;
+        padding: clamp(22px, 4.5vw, 44px);
         box-shadow:
-          0 1px 0 rgba(255, 255, 255, 0.1) inset,
-          0 30px 80px -20px rgba(0, 0, 0, 0.7),
-          0 0 80px rgba(245, 176, 40, 0.15);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        position: relative;
+          0 1px 0 rgba(255, 255, 255, 0.08) inset,
+          0 34px 90px -24px rgba(0, 0, 0, 0.75),
+          0 0 90px rgba(168, 85, 247, 0.12);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
         text-align: center;
+        position: relative;
+        overflow: hidden;
+      }
+      .quiz-frame::before {
+        content: '';
+        position: absolute;
+        inset: 1px;
+        border-radius: 25px;
+        border: 1px solid rgba(255, 212, 102, 0.14);
+        pointer-events: none;
       }
 
       .screen { display: none; animation: screenIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
       .screen-active { display: block; }
       @keyframes screenIn {
-        from { opacity: 0; transform: translateY(20px) scale(0.98); }
+        from { opacity: 0; transform: translateY(22px) scale(0.985); }
         to { opacity: 1; transform: translateY(0) scale(1); }
       }
 
       .font-script { font-family: 'Cormorant Garamond', Georgia, serif; }
+      .mt-4 { margin-top: 16px; }
 
-      .game-stamp, .welcome-badge {
+      .welcome-badge, .game-stamp {
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        padding: 6px 14px;
+        padding: 7px 16px;
         border: 1px dashed rgba(255, 212, 102, 0.4);
         border-radius: 999px;
         color: #FFD466;
         font-size: 11px;
-        letter-spacing: 0.3em;
+        letter-spacing: 0.28em;
         text-transform: uppercase;
         margin-bottom: 18px;
       }
 
-      .game-title {
+      .quiz-title {
         font-family: 'Cinzel', serif;
         font-size: clamp(28px, 5vw, 40px);
         font-weight: 700;
-        background: linear-gradient(120deg, #FFD466 0%, #F5B028 50%, #FFD466 100%);
-        background-size: 200% auto;
+        background: linear-gradient(120deg, #FFD466 0%, #F5B028 45%, #A855F7 100%);
+        background-size: 220% auto;
         -webkit-background-clip: text;
         background-clip: text;
         color: transparent;
-        margin: 0 0 16px;
+        margin: 0 0 12px;
         line-height: 1.15;
-        animation: shimmerTitle 3s linear infinite;
+        animation: shimmerTitle 4s linear infinite;
       }
       @keyframes shimmerTitle {
         from { background-position: 0% center; }
-        to { background-position: 200% center; }
+        to { background-position: 220% center; }
       }
 
-      .game-subtitle {
+      .quiz-subtitle {
         font-family: 'Cormorant Garamond', serif;
         font-style: italic;
         font-size: clamp(15px, 2.4vw, 18px);
-        color: rgba(255, 252, 242, 0.85);
-        line-height: 1.5;
-        margin: 0 0 28px;
+        color: rgba(255, 252, 242, 0.88);
+        line-height: 1.55;
+        margin: 0 0 24px;
       }
 
-      .round-preview {
+      /* Trío demo (welcome) */
+      .demo-trio {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        font-size: clamp(44px, 9vw, 62px);
+        margin-bottom: 18px;
+        filter: drop-shadow(0 6px 22px rgba(255, 212, 102, 0.35));
+      }
+      .demo-emoji {
+        display: inline-block;
+        animation: emojiPop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) backwards, emojiFloat 3s ease-in-out 0.55s infinite;
+      }
+      .demo-emoji:nth-child(1) { animation-delay: 0.05s, 0.6s; }
+      .demo-emoji:nth-child(2) { animation-delay: 0.16s, 0.7s; }
+      .demo-emoji:nth-child(3) { animation-delay: 0.27s, 0.8s; }
+      .demo-plus {
+        font-size: 26px;
+        color: rgba(240, 171, 252, 0.8);
+        font-family: 'Cinzel', serif;
+      }
+
+      @keyframes emojiPop {
+        from { opacity: 0; transform: scale(0.2) rotate(-18deg); }
+        to { opacity: 1; transform: scale(1) rotate(0deg); }
+      }
+      @keyframes emojiFloat {
+        0%, 100% { transform: translateY(0) rotate(0deg); }
+        50% { transform: translateY(-7px) rotate(3deg); }
+      }
+
+      .welcome-meta {
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 14px;
-        margin-bottom: 24px;
+        margin-bottom: 14px;
         flex-wrap: wrap;
       }
-      .round-preview-item {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 2px;
-        padding: 10px 14px;
-        background: rgba(255, 212, 102, 0.1);
-        border: 1px solid rgba(255, 212, 102, 0.3);
-        border-radius: 12px;
-        min-width: 120px;
-      }
-      .round-num {
-        font-family: 'Cinzel', serif;
-        font-weight: 700;
-        font-size: 16px;
-        color: #FFD466;
-      }
-      .round-label {
-        font-size: 11px;
-        font-weight: 600;
-        color: #FFFCF2;
-      }
-      .round-count {
-        font-size: 10px;
-        color: rgba(255, 252, 242, 0.6);
-        letter-spacing: 0.05em;
-      }
-      .round-divider-arrow {
-        font-size: 28px;
-        color: #FFD466;
-        filter: drop-shadow(0 0 8px rgba(255, 212, 102, 0.6));
-      }
+      .meta-item { display: flex; align-items: center; gap: 7px; }
+      .meta-num { font-family: 'Cinzel', serif; font-weight: 700; color: #FFD466; font-size: 16px; }
+      .meta-label { font-size: 12px; color: rgba(255, 252, 242, 0.72); }
+      .meta-sep { color: rgba(240, 171, 252, 0.6); }
 
-      .round-intor-badge {
-        display: inline-block;
-        padding: 8px 18px;
-        border-radius: 999px;
-        background: linear-gradient(135deg, #FFD466 0%, #F5B028 100%);
-        color: #2D1B4E;
-        font-family: 'Cinzel', serif;
-        font-weight: 700;
-        font-size: 14px;
-        letter-spacing: 0.15em;
-        text-transform: uppercase;
-        margin-bottom: 18px;
-        box-shadow: 0 4px 16px -4px rgba(245, 176, 40, 0.5);
+      .best-score {
+        font-size: 13px;
+        color: rgba(255, 212, 102, 0.9);
+        margin: 0 0 14px;
       }
+      .best-score strong { font-family: 'Cinzel', serif; }
 
       .game-btn, .btn-play-game {
         display: inline-flex;
         align-items: center;
         gap: 12px;
-        padding: 16px 36px;
+        padding: 15px 36px;
         border-radius: 999px;
         border: none;
         background: linear-gradient(135deg, #FFD466 0%, #F5B028 100%);
         color: #2D1B4E;
         font-family: 'Cinzel', serif;
-        font-weight: 600;
+        font-weight: 700;
         font-size: 15px;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.04em;
         cursor: pointer;
-        box-shadow: 0 10px 30px -8px rgba(245, 176, 40, 0.55);
+        box-shadow: 0 12px 34px -10px rgba(245, 176, 40, 0.6);
         transition: transform 0.25s, box-shadow 0.25s;
         text-decoration: none;
       }
       .game-btn:hover, .btn-play-game:hover {
         transform: translateY(-2px);
-        box-shadow: 0 14px 36px -8px rgba(245, 176, 40, 0.7);
+        box-shadow: 0 16px 42px -10px rgba(245, 176, 40, 0.75);
       }
 
-      .game-btn { margin-top: 8px; }
-
-      .game-progress {
-        margin-bottom: 22px;
-      }
-      .progress-info {
+      /* ============ HUD del quiz ============ */
+      .hud-top {
         display: flex;
         justify-content: space-between;
-        align-items: baseline;
-        margin-bottom: 8px;
+        align-items: center;
+        margin-bottom: 10px;
+        gap: 8px;
       }
-      .round-label-top {
+      .hud-item { text-align: center; }
+      .hud-label {
+        font-size: 10px;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: rgba(255, 212, 102, 0.72);
+        display: block;
+        margin-bottom: 4px;
+      }
+      .hud-strong {
         font-family: 'Cinzel', serif;
-        font-weight: 600;
-        font-size: 14px;
+        font-weight: 700;
+        font-size: 17px;
         color: #FFD466;
       }
-      .round-counter {
-        font-size: 11px;
-        letter-spacing: 0.2em;
-        text-transform: uppercase;
-        color: rgba(255, 252, 242, 0.7);
+      .hud-streak {
+        font-family: 'Cinzel', serif;
+        font-weight: 700;
+        font-size: 17px;
+        color: rgba(255, 252, 242, 0.55);
+        display: inline-block;
+        transition: color 0.2s, transform 0.2s;
       }
+      .hud-streak.is-hot {
+        color: #FB923C;
+        text-shadow: 0 0 14px rgba(251, 146, 60, 0.8);
+        animation: streakPulse 1.1s ease-in-out infinite;
+      }
+      @keyframes streakPulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.12); }
+      }
+      .hud-score { transition: transform 0.2s; }
+      .hud-score.is-bump { animation: scoreBump 0.4s ease-out; }
+      @keyframes scoreBump {
+        0% { transform: scale(1); }
+        40% { transform: scale(1.35); color: #F0ABFC; }
+        100% { transform: scale(1); }
+      }
+
       .progress-track {
-        height: 6px;
-        background: rgba(255, 252, 242, 0.1);
+        height: 7px;
+        background: rgba(255, 252, 242, 0.08);
         border-radius: 999px;
         overflow: hidden;
+        margin-bottom: 8px;
       }
       .progress-fill {
         height: 100%;
         width: 0%;
-        background: linear-gradient(90deg, #FFD466 0%, #F5B028 100%);
+        background: linear-gradient(90deg, #FFD466 0%, #F5B028 60%, #A855F7 100%);
         border-radius: 999px;
         transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 0 0 12px rgba(255, 212, 102, 0.6);
+        box-shadow: 0 0 14px rgba(255, 212, 102, 0.55);
       }
 
-      /* Item display (Ronda 1) */
-            /* Rune (emojis del héroe) */
-
-
-      .rune-container {
-        margin-bottom: 22px;
+      .dots-row {
+        display: flex;
+        justify-content: center;
+        gap: 6px;
+        margin-bottom: 18px;
+        flex-wrap: wrap;
       }
+      .q-dot {
+        width: 9px; height: 9px;
+        border-radius: 50%;
+        background: rgba(255, 252, 242, 0.16);
+        transition: transform 0.25s, background 0.25s, box-shadow 0.25s;
+      }
+      .q-dot.is-current {
+        transform: scale(1.5);
+        background: #F0ABFC;
+        box-shadow: 0 0 10px rgba(240, 171, 252, 0.8);
+      }
+      .q-dot.is-right { background: #4ADE80; box-shadow: 0 0 8px rgba(74, 222, 128, 0.6); }
+      .q-dot.is-wrong { background: #EF4444; box-shadow: 0 0 8px rgba(239, 68, 68, 0.6); }
+
+      /* Runa de emojis */
       .rune-frame {
         background:
-          radial-gradient(circle at 50% 50%, rgba(245, 176, 40, 0.15) 0%, transparent 70%),
+          radial-gradient(circle at 50% 50%, rgba(245, 176, 40, 0.16) 0%, transparent 70%),
           rgba(255, 252, 242, 0.04);
-        border: 1px solid rgba(255, 212, 102, 0.25);
+        border: 2px solid rgba(255, 212, 102, 0.28);
         border-radius: 20px;
-        padding: 28px 24px;
+        padding: 26px 20px;
+        position: relative;
+        margin-bottom: 16px;
       }
       .rune-frame::before, .rune-frame::after {
         content: '✦';
         position: absolute;
         top: 12px;
         color: rgba(255, 212, 102, 0.6);
-        font-size: 12px;
+        font-size: 13px;
       }
-      .rune-frame::before { left: 14px; }
-      .rune-frame::after { right: 14px; }
+      .rune-frame::before { left: 15px; }
+      .rune-frame::after { right: 15px; }
+
       .rune-label {
         font-family: 'Cormorant Garamond', serif;
         font-style: italic;
-        color: rgba(255, 252, 242, 0.75);
+        color: rgba(255, 252, 242, 0.78);
         font-size: 14px;
-        margin: 0 0 12px;
-        text-align: center;
+        margin: 0 0 14px;
       }
       .rune-emojis {
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 14px;
-        font-size: clamp(40px, 9vw, 56px);
-        filter: drop-shadow(0 4px 16px rgba(255, 212, 102, 0.4));
+        gap: 12px;
+        font-size: clamp(42px, 9vw, 58px);
+        filter: drop-shadow(0 4px 18px rgba(255, 212, 102, 0.4));
+        min-height: 74px;
       }
       .rune-emojis span {
-        animation: runeFloat 3s ease-in-out infinite;
+        display: inline-block;
+        animation: emojiPop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) backwards,
+                  emojiFloat 3s ease-in-out 0.6s infinite;
       }
-      .rune-emojis span:nth-child(2) { animation-delay: 0.3s; }
-      .rune-emojis span:nth-child(3) { animation-delay: 0.6s; }
-      @keyframes runeFloat {
-        0%, 100% { transform: translateY(0) rotate(0deg); }
-        50% { transform: translateY(-6px) rotate(3deg); }
+      .rune-emojis span:nth-child(1) { animation-delay: 0.05s, 0.65s; }
+      .rune-emojis span:nth-child(3) { animation-delay: 0.16s, 0.76s; }
+      .rune-emojis span:nth-child(5) { animation-delay: 0.27s, 0.87s; }
+      .rune-emojis .plus {
+        font-size: 24px;
+        color: rgba(240, 171, 252, 0.85);
+        font-family: 'Cinzel', serif;
+        animation: none;
       }
 
       .options-label {
-        font-size: 12px;
-        letter-spacing: 0.25em;
+        font-size: 11px;
+        letter-spacing: 0.26em;
         text-transform: uppercase;
-        color: rgba(255, 252, 242, 0.7);
+        color: rgba(255, 252, 242, 0.66);
         margin: 0 0 12px;
       }
+
       .options-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 10px;
       }
-      @media (max-width: 480px) {
-        .options-grid { grid-template-columns: 1fr; }
-      }
+      @media (max-width: 480px) { .options-grid { grid-template-columns: 1fr; } }
 
       .option-btn {
         position: relative;
         padding: 14px 12px;
-        background: rgba(255, 252, 242, 0.06);
-        border: 1.5px solid rgba(255, 212, 102, 0.25);
-        border-radius: 12px;
+        background: rgba(255, 252, 242, 0.05);
+        border: 1.5px solid rgba(255, 212, 102, 0.26);
+        border-radius: 13px;
         color: #FFFCF2;
         font-family: 'Inter', sans-serif;
-        font-size: 13px;
+        font-size: 14px;
         font-weight: 500;
         cursor: pointer;
-        transition: all 0.25s;
+        transition: all 0.22s;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -424,51 +536,65 @@
         text-align: center;
       }
       .option-btn:hover:not(:disabled) {
-        background: rgba(245, 176, 40, 0.15);
+        background: rgba(245, 176, 40, 0.14);
         border-color: rgba(255, 212, 102, 0.6);
         transform: translateY(-2px);
       }
-      .option-btn:disabled { cursor: not-allowed; opacity: 0.6; }
+      .option-btn:disabled { cursor: not-allowed; }
       .option-btn.is-correct {
-        background: linear-gradient(135deg, rgba(74, 222, 128, 0.3) 0%, rgba(34, 197, 94, 0.3) 100%);
+        background: linear-gradient(135deg, rgba(74, 222, 128, 0.28) 0%, rgba(34, 197, 94, 0.28) 100%);
         border-color: #4ADE80;
-        color: #FFFCF2;
-        animation: correctPulse 0.6s ease-out;
+        animation: correctPulse 0.55s ease-out;
       }
       .option-btn.is-wrong {
-        background: rgba(239, 68, 68, 0.18);
-        border-color: rgba(239, 68, 68, 0.5);
+        background: rgba(239, 68, 68, 0.16);
+        border-color: rgba(239, 68, 68, 0.6);
         animation: wrongShake 0.4s;
       }
+      .option-btn .check-icon {
+        position: absolute;
+        top: -7px; right: -6px;
+        width: 22px; height: 22px;
+        border-radius: 50%;
+        background: #4ADE80;
+        color: #052e16;
+        font-size: 13px;
+        font-weight: 900;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(74, 222, 128, 0.6);
+      }
+      .option-btn.is-correct .check-icon { display: flex; }
       @keyframes correctPulse {
         0% { transform: scale(1); }
-        50% { transform: scale(1.06); box-shadow: 0 0 20px rgba(74, 222, 128, 0.5); }
+        45% { transform: scale(1.05); box-shadow: 0 0 26px rgba(74, 222, 128, 0.55); }
         100% { transform: scale(1); }
       }
       @keyframes wrongShake {
         0%, 100% { transform: translateX(0); }
-        25% { transform: translateX(-4px); }
-        75% { transform: translateX(4px); }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
       }
 
       .feedback {
-        margin-top: 16px;
-        padding: 12px 16px;
+        margin-top: 14px;
+        padding: 11px 15px;
         border-radius: 12px;
         font-family: 'Cormorant Garamond', serif;
         font-style: italic;
-        font-size: 14px;
+        font-size: 15px;
         text-align: center;
-        animation: fadeIn 0.4s ease-out;
+        animation: fadeIn 0.35s ease-out;
       }
       .feedback.correct {
-        background: rgba(74, 222, 128, 0.15);
-        border: 1px solid rgba(74, 222, 128, 0.3);
+        background: rgba(74, 222, 128, 0.13);
+        border: 1px solid rgba(74, 222, 128, 0.32);
         color: #BBF7D0;
       }
       .feedback.wrong {
-        background: rgba(245, 176, 40, 0.15);
-        border: 1px solid rgba(245, 176, 40, 0.3);
+        background: rgba(245, 176, 40, 0.13);
+        border: 1px solid rgba(245, 176, 40, 0.32);
         color: #FFD466;
       }
       @keyframes fadeIn {
@@ -476,74 +602,146 @@
         to { opacity: 1; transform: translateY(0); }
       }
 
-      /* Heroínas */
+      /* Partículas de confeti (DOM) */
+      .spark-particle {
+        position: absolute;
+        width: 7px; height: 7px;
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 60;
+        animation: sparkFly 0.85s ease-out forwards;
+      }
+      @keyframes sparkFly {
+        from { transform: translate(0, 0) scale(1); opacity: 1; }
+        to { transform: translate(var(--dx), var(--dy)) scale(0.15); opacity: 0; }
+      }
+
+      /* Puntos flotantes (+150) */
+      .float-pts {
+        position: absolute;
+        font-family: 'Cinzel', serif;
+        font-weight: 700;
+        font-size: 17px;
+        color: #FFD466;
+        text-shadow: 0 2px 6px rgba(10, 5, 20, 0.9);
+        pointer-events: none;
+        z-index: 60;
+        animation: ptsFloat 0.95s ease-out forwards;
+      }
+      @keyframes ptsFloat {
+        from { opacity: 0; transform: translateY(6px) scale(0.8); }
+        25% { opacity: 1; }
+        to { opacity: 0; transform: translateY(-44px) scale(1.15); }
+      }
+
+      /* ============ Heroínas ============ */
       .heroine-grid {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
-        margin-top: 22px;
+        gap: 11px;
+        margin-top: 20px;
       }
-      @media (min-width: 600px) {
-        .heroine-grid { grid-template-columns: repeat(3, 1fr); }
-      }
+      @media (min-width: 560px) { .heroine-grid { grid-template-columns: repeat(3, 1fr); } }
+
       .heroine-btn {
-        padding: 16px 10px;
-        background: rgba(255, 252, 242, 0.05);
+        padding: 18px 10px;
+        background: rgba(255, 252, 242, 0.045);
         border: 1.5px solid rgba(255, 212, 102, 0.25);
-        border-radius: 14px;
+        border-radius: 15px;
         color: #FFFCF2;
         font-family: 'Cinzel', serif;
-        font-size: 13px;
+        font-size: 14px;
         font-weight: 500;
         cursor: pointer;
         transition: all 0.25s;
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
+        position: relative;
+        overflow: hidden;
+      }
+      .heroine-btn::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 50% 0%, var(--role-glow, rgba(255, 212, 102, 0.25)) 0%, transparent 70%);
+        opacity: 0;
+        transition: opacity 0.3s;
       }
       .heroine-btn:hover {
-        background: rgba(245, 176, 40, 0.15);
+        transform: translateY(-4px);
         border-color: #FFD466;
-        transform: translateY(-3px);
-        box-shadow: 0 8px 20px -8px rgba(245, 176, 40, 0.6);
+        box-shadow: 0 10px 26px -8px rgba(245, 176, 40, 0.55);
       }
-      .heroine-btn .role {
-        font-size: 10px;
+      .heroine-btn:hover::before { opacity: 1; }
+      .heroine-emoji { font-size: 30px; position: relative; }
+      .heroine-role {
+        font-size: 9.5px;
         letter-spacing: 0.2em;
         text-transform: uppercase;
-        color: rgba(255, 212, 102, 0.7);
+        color: rgba(255, 212, 102, 0.72);
+        position: relative;
       }
+      .role-tiradora { --role-glow: rgba(74, 222, 128, 0.3); }
+      .role-maga { --role-glow: rgba(168, 85, 247, 0.35); }
+      .role-apoyo { --role-glow: rgba(236, 72, 153, 0.3); }
+      .role-asesina { --role-glow: rgba(239, 68, 68, 0.3); }
+      .role-luchador { --role-glow: rgba(245, 158, 11, 0.3); }
 
-      /* Resultado */
-      .result-crown {
-        font-size: 60px;
+      /* ============ Resultado ============ */
+      .stars-row {
+        font-size: 44px;
+        letter-spacing: 6px;
         margin-bottom: 8px;
-        animation: crownFloat 3s ease-in-out infinite;
         filter: drop-shadow(0 4px 16px rgba(255, 212, 102, 0.5));
       }
-      @keyframes crownFloat {
-        0%, 100% { transform: translateY(0) rotate(-3deg); }
-        50% { transform: translateY(-6px) rotate(3deg); }
+      .star { color: rgba(255, 252, 242, 0.16); display: inline-block; }
+      .star.is-on {
+        color: #FFD466;
+        animation: starPop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
       }
+      .star.is-on:nth-child(2) { animation-delay: 0.18s; }
+      .star.is-on:nth-child(3) { animation-delay: 0.36s; }
+      @keyframes starPop {
+        from { transform: scale(0.2) rotate(-40deg); opacity: 0; }
+        to { transform: scale(1) rotate(0deg); opacity: 1; }
+      }
+
+      .score-board {
+        background: rgba(255, 252, 242, 0.045);
+        border: 1px solid rgba(255, 212, 102, 0.2);
+        border-radius: 14px;
+        padding: 12px 20px;
+        margin: 16px 0 10px;
+      }
+      .stat-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 7px 0;
+        font-size: 13px;
+        color: rgba(255, 252, 242, 0.88);
+        border-bottom: 1px solid rgba(255, 212, 102, 0.09);
+      }
+      .stat-row:last-child { border-bottom: none; }
+      .stat-label {
+        color: rgba(255, 212, 102, 0.8);
+        font-size: 11px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+      .stat-value { font-family: 'Cinzel', serif; font-weight: 700; color: #FFD466; }
+
+      .result-dots { margin: 4px 0 14px; }
+
       .result-message {
         font-family: 'Cormorant Garamond', serif;
         font-style: italic;
         font-size: clamp(15px, 2.4vw, 18px);
-        line-height: 1.65;
+        line-height: 1.62;
         color: rgba(255, 252, 242, 0.92);
-        margin: 16px 0 8px;
+        margin: 14px 0 6px;
         padding: 0 6px;
-      }
-      .result-stats {
-        font-family: 'Cinzel', serif;
-        font-size: 14px;
-        color: #FFD466;
-        margin: 10px 0;
-      }
-      .result-stats strong {
-        font-size: 18px;
-        color: #FFFCF2;
       }
       .result-footer {
         display: flex;
@@ -558,19 +756,25 @@
         height: 1px;
         background: linear-gradient(90deg, transparent, #FFD466, transparent);
       }
+      .new-best {
+        font-size: 13px;
+        color: #F0ABFC;
+        font-weight: 600;
+        margin: 6px 0;
+      }
       .result-note {
         font-size: 12px;
-        color: rgba(255, 252, 242, 0.6);
+        color: rgba(255, 252, 242, 0.62);
         font-style: italic;
-        margin: 0 0 14px;
+        margin: 0 0 4px;
       }
-      .btn-play-game { margin: 14px auto 0; }
+      .hidden { display: none !important; }
     </style>
 
     <script>
-      // =========================================================
-      // Datos del juego
-      // =========================================================
+      // ============================================================
+      // DATOS
+      // ============================================================
       type HeroQuestion = {
         emojis: string[];
         answer: string;
@@ -578,18 +782,14 @@
         hint: string;
       };
 
-      type Heroine = {
-        name: string;
-        role: string;
-        emoji: string;
-      };
+      type Heroine = { name: string; role: string; roleClass: string; emoji: string };
 
-      const heroesRound: HeroQuestion[] = [
+      const questions: HeroQuestion[] = [
         { emojis: ['🛡️', '💪', '⚔️'], answer: 'Tank',
           options: ['Tank', 'Maga', 'Asesina', 'Apoyo'],
           hint: 'Defiende al equipo y aguanta todo el daño' },
         { emojis: ['🧙‍♀️', '🔮', '✨'], answer: 'Maga',
-          options: ['Arquera', 'Maga', 'Luchadora', 'Apoyo'],
+          options: ['Tirador', 'Maga', 'Luchadora', 'Apoyo'],
           hint: 'Lanza hechizos devastadores desde lejos' },
         { emojis: ['🏹', '🌿', '👁️'], answer: 'Tirador',
           options: ['Tank', 'Apoyo', 'Tirador', 'Maga'],
@@ -608,7 +808,7 @@
           hint: 'Congela y controla a los enemigos' },
         { emojis: ['🌺', '⚔️', '🛡️'], answer: 'Luchador',
           options: ['Asesina', 'Luchador', 'Apoyo', 'Tank'],
-          hint: 'Ataca con espadas y poderes de tierra' },
+          hint: 'Ataca con espadas y poder de tierra' },
         { emojis: ['👑', '💫', '✨'], answer: 'Maga',
           options: ['Tirador', 'Maga', 'Luchador', 'Asesina'],
           hint: 'Controla el tiempo y los elementos' },
@@ -618,189 +818,421 @@
       ];
 
       const heroines: Heroine[] = [
-        { name: 'Hanabi', role: 'Tiradora', emoji: '🏹💥' },
-        { name: 'Miya', role: 'Tiradora', emoji: '🌟🏹' },
-        { name: 'Pharsa', role: 'Maga', emoji: '🔥🦅' },
-        { name: 'Luo Yi', role: 'Maga', emoji: '🌙🧧' },
-        { name: 'Estes', role: 'Apoyo', emoji: '💚🌿' },
-        { name: 'Guinevere', role: 'Maga', emoji: '👸✨' },
-        { name: 'Fanny', role: 'Asesina', emoji: '🗡️💨' },
-        { name: 'Kagura', role: 'Maga', emoji: '🧙‍♀️🔮' },
-        { name: 'Chou', role: 'Luchador', emoji: '🥋⚡' },
-        { name: 'Angela', role: 'Apoyo', emoji: '💖🌸' }
+        { name: 'Hanabi', role: 'Tiradora', roleClass: 'role-tiradora', emoji: '🏹' },
+        { name: 'Miya', role: 'Tiradora', roleClass: 'role-tiradora', emoji: '🌟' },
+        { name: 'Pharsa', role: 'Maga', roleClass: 'role-maga', emoji: '🔥' },
+        { name: 'Luo Yi', role: 'Maga', roleClass: 'role-maga', emoji: '🌙' },
+        { name: 'Estes', role: 'Apoyo', roleClass: 'role-apoyo', emoji: '💚' },
+        { name: 'Guinevere', role: 'Maga', roleClass: 'role-maga', emoji: '👸' },
+        { name: 'Fanny', role: 'Asesina', roleClass: 'role-asesina', emoji: '🗡️' },
+        { name: 'Kagura', role: 'Maga', roleClass: 'role-maga', emoji: '🧙‍♀️' },
+        { name: 'Chou', role: 'Luchador', roleClass: 'role-luchador', emoji: '🥋' },
+        { name: 'Angela', role: 'Apoyo', roleClass: 'role-apoyo', emoji: '💖' }
       ];
 
-      const baseUrl = document.documentElement.dataset.baseUrl || '/mariela/';
-      const workerUrl = 'https://mariela-responses.andyguzman117.workers.dev';
-
-      // =========================================================
-      // Estado del juego
-      // =========================================================
-      let questionIndex = 0;
-      let score = 0;
-      const totalQuestions = heroesRound.length;
-
-      const screens = {
-        welcome: document.getElementById('screen-welcome')!,
-        game: document.getElementById('screen-game')!,
-        final: document.getElementById('screen-final')!,
-        result: document.getElementById('screen-result')!
+      const heroineMessages: Record<string, string> = {
+        Hanabi: 'Hanabi lanza sus flechas con una precisión increíble, llena de luz y de poder. Como tú cuando juegas: enfocada, segura, sin que nada te detenga.',
+        Miya: 'Miya dispara desde lejos con paciencia y precisión. Clásica y elegante, como la esencia que llevas dentro.',
+        Pharsa: 'Pharsa vuela sobre el campo de batalla con una vista que nadie más tiene. Como tú: siempre viendo las cosas desde otra perspectiva.',
+        'Luo Yi': 'Luo Yi lee los astros y guía con magia antigua. Como tú: siempre conectada con lo que sientes, con esa intuición que no falla.',
+        Estes: 'Estes es de los apoyos más nobles: curar sin esperar nada a cambio. Como tú con los que quieres.',
+        Guinevere: 'Guinevere es elegante, poderosa y de corazón noble. Como tú, Mariela: fuerte por fuera, suave por dentro.',
+        Fanny: 'Fanny es rápida, arriesgada y hace cosas que nadie más se atreve. Como tú.',
+        Kagura: 'Kagura es mágica, llena de luz. Como la magia que le pusiste a mi vida.',
+        Chou: 'Chou nunca se rinde, aguanta todo y vuelve más fuerte. Eso eres tú, Mariela.',
+        Angela: 'Angela cuida, protege y da todo por los suyos. Como tú.'
       };
 
-      const showScreen = (name: keyof typeof screens) => {
-        Object.values(screens).forEach((s) => s.classList.remove('screen-active'));
-        screens[name].classList.add('screen-active');
+      // Puntaje
+      const BASE_PTS = 100;
+      const STREAK_STEP = 25;
+      const STREAK_CAP = 100;
+      const SPEED_BONUS = 50;
+      const SPEED_TIME = 2.5; // segundos
+
+      const CONFETTI = ['#FFD466', '#F0ABFC', '#A855F7', '#4ADE80', '#FBBF24'];
+
+      // ============================================================
+      // ESTADO
+      // ============================================================
+      const state = {
+        qIndex: 0,
+        score: 0,
+        correct: 0,
+        streak: 0,
+        bestStreak: 0,
+        results: [] as boolean[],
+        qStart: performance.now(),
+        heroine: ''
       };
 
-      // ---------- Inicio ----------
-      document.getElementById('btn-start')?.addEventListener('click', () => {
-        questionIndex = 0;
-        score = 0;
-        showScreen('game');
-        renderQuestion();
-      });
+      const total = questions.length;
 
-      // ---------- Renderizar pregunta ----------
-      const renderQuestion = () => {
-        const q = heroesRound[questionIndex];
-        const total = heroesRound.length;
+      // ============================================================
+      // DOM / PANTALLAS
+      // ============================================================
+      const screens: Record<string, HTMLElement | null> = {
+        welcome: document.getElementById('screen-welcome'),
+        game: document.getElementById('screen-game'),
+        final: document.getElementById('screen-final'),
+        result: document.getElementById('screen-result')
+      };
+      const showScreen = (name: string) => {
+        Object.values(screens).forEach((s) => s?.classList.remove('screen-active'));
+        screens[name]?.classList.add('screen-active');
+      };
 
-        // Progreso
-        const fillEl = document.getElementById('progress-fill') as HTMLElement;
-        const roundCounter = document.getElementById('round-counter');
-        if (roundCounter) roundCounter.textContent = `Pregunta ${questionIndex + 1} / ${total}`;
-        if (fillEl) fillEl.style.width = `${(questionIndex / total) * 100}%`;
+      const frame = document.getElementById('quiz-frame')!;
+      const runeEmojis = document.getElementById('rune-emojis')!;
+      const optionsGrid = document.getElementById('options-grid')!;
+      const feedbackEl = document.getElementById('feedback')!;
+      const progressFill = document.getElementById('progress-fill')!;
+      const dotsRow = document.getElementById('dots-row')!;
+      const resultDots = document.getElementById('result-dots')!;
+      const hudQuestion = document.getElementById('hud-question')!;
+      const hudStreak = document.getElementById('hud-streak')!;
+      const hudScore = document.getElementById('hud-score')!;
 
-        // Mostrar los 3 emojis
-        const runeEmojis = document.getElementById('rune-emojis');
-        if (runeEmojis) runeEmojis.innerHTML = q.emojis.map((e) => `<span>${e}</span>`).join(' + ');
+      const BEST_KEY = 'mlquiz_best_v1';
 
-        // Renderizar opciones
-        const grid = document.getElementById('options-grid')!;
-        const feedbackEl = document.getElementById('feedback')!;
-        if (feedbackEl) {
-          feedbackEl.classList.add('hidden');
-          feedbackEl.classList.remove('correct', 'wrong');
-          feedbackEl.textContent = '';
+      // ============================================================
+      // EFECTOS (confeti + puntos flotantes)
+      // ============================================================
+      function confettiBurst(x: number, y: number, count = 16) {
+        for (let i = 0; i < count; i++) {
+          const el = document.createElement('span');
+          el.className = 'spark-particle';
+          const angle = (Math.PI * 2 * i) / count + Math.random() * 0.5;
+          const dist = 55 + Math.random() * 60;
+          el.style.left = `${x}px`;
+          el.style.top = `${y}px`;
+          el.style.setProperty('--dx', `${Math.cos(angle) * dist}px`);
+          el.style.setProperty('--dy', `${Math.sin(angle) * dist}px`);
+          el.style.background = CONFETTI[i % CONFETTI.length];
+          el.style.width = el.style.height = `${5 + Math.random() * 5}px`;
+          frame.appendChild(el);
+          window.setTimeout(() => el.remove(), 900);
         }
-        grid.innerHTML = q.options
+      }
+
+      function floatPts(x: number, y: number, text: string) {
+        const el = document.createElement('span');
+        el.className = 'float-pts';
+        el.textContent = text;
+        el.style.left = `${x}px`;
+        el.style.top = `${y}px`;
+        frame.appendChild(el);
+        window.setTimeout(() => el.remove(), 1000);
+      }
+
+      function frameCenterOf(el: HTMLElement) {
+        const fr = frame.getBoundingClientRect();
+        const r = el.getBoundingClientRect();
+        return { x: r.left - fr.left + r.width / 2, y: r.top - fr.top + r.height / 2 };
+      }
+
+      // ============================================================
+      // DOTS DE PROGRESO
+      // ============================================================
+      function buildDots() {
+        dotsRow.innerHTML = questions.map(() => '<span class="q-dot"></span>').join('');
+        syncDots(dotsRow);
+      }
+
+      function syncDots(row: HTMLElement) {
+        row.querySelectorAll<HTMLElement>('.q-dot').forEach((d, i) => {
+          d.classList.remove('is-current', 'is-right', 'is-wrong');
+          if (state.results[i] === true) d.classList.add('is-right');
+          else if (state.results[i] === false) d.classList.add('is-wrong');
+          else if (i === state.qIndex && row === dotsRow) d.classList.add('is-current');
+        });
+      }
+
+      // ============================================================
+      // HUD
+      // ============================================================
+      function updateHUD() {
+        hudQuestion.textContent = `${Math.min(state.qIndex + 1, total)} / ${total}`;
+        hudScore.textContent = String(state.score);
+        if (state.streak >= 2) {
+          hudStreak.textContent = `🔥 x${state.streak}`;
+          hudStreak.classList.add('is-hot');
+        } else {
+          hudStreak.textContent = '—';
+          hudStreak.classList.remove('is-hot');
+        }
+        progressFill.style.width = `${(state.qIndex / total) * 100}%`;
+      }
+
+      function bumpScore() {
+        hudScore.classList.remove('is-bump');
+        void hudScore.offsetWidth; // reinicia animación
+        hudScore.classList.add('is-bump');
+      }
+
+      // ============================================================
+      // RENDER DE PREGUNTA
+      // ============================================================
+      function renderQuestion() {
+        const q = questions[state.qIndex];
+        state.qStart = performance.now();
+
+        // Emojis con pop escalonado (se regeneran → reinicia animación)
+        runeEmojis.innerHTML =
+          `<span>${q.emojis[0]}</span><span class="plus">+</span>` +
+          `<span>${q.emojis[1]}</span><span class="plus">+</span>` +
+          `<span>${q.emojis[2]}</span>`;
+
+        // Opciones (barajadas)
+        const opts = [...q.options].sort(() => Math.random() - 0.5);
+        optionsGrid.innerHTML = opts
           .map(
-            (opt) => `
-            <button type="button" class="option-btn" data-value="${opt}">
-              <span>${opt}</span>
-            </button>
-          `
+            (o) => `
+            <button type="button" class="option-btn" data-value="${o}">
+              <span>${o}</span>
+              <span class="check-icon">✓</span>
+            </button>`
           )
           .join('');
 
-        grid.querySelectorAll<HTMLButtonElement>('.option-btn').forEach((btn) => {
-          btn.addEventListener('click', () => handleAnswer(btn, q.answer, q.hint));
-        });
-      };
+        feedbackEl.className = 'feedback hidden';
+        feedbackEl.textContent = '';
 
-      // ---------- Manejar respuesta ----------
-      const handleAnswer = (btn: HTMLButtonElement, answer: string, hint: string) => {
-        const feedbackEl = document.getElementById('feedback')!;
-        const allBtns = document.querySelectorAll<HTMLButtonElement>('.option-btn');
+        optionsGrid.querySelectorAll<HTMLButtonElement>('.option-btn').forEach((btn) => {
+          btn.addEventListener('click', () => handleAnswer(btn, q));
+        });
+
+        updateHUD();
+        syncDots(dotsRow);
+      }
+
+      // ============================================================
+      // RESPUESTA
+      // ============================================================
+      function handleAnswer(btn: HTMLButtonElement, q: HeroQuestion) {
+        const allBtns = optionsGrid.querySelectorAll<HTMLButtonElement>('.option-btn');
         allBtns.forEach((b) => (b.disabled = true));
 
-        const isCorrect = btn.dataset.value === answer;
+        const isCorrect = btn.dataset.value === q.answer;
+        const elapsed = (performance.now() - state.qStart) / 1000;
+        let gained = 0;
+        let parts: string[] = [];
+
         if (isCorrect) {
-          score++;
+          state.correct++;
+          state.streak++;
+          state.bestStreak = Math.max(state.bestStreak, state.streak);
+          state.results[state.qIndex] = true;
+
+          gained += BASE_PTS;
+          parts.push(`+${BASE_PTS}`);
+
+          if (state.streak >= 2) {
+            const bonus = Math.min(STREAK_STEP * (state.streak - 1), STREAK_CAP);
+            gained += bonus;
+            parts.push(`🔥 +${bonus}`);
+          }
+          if (elapsed <= SPEED_TIME) {
+            gained += SPEED_BONUS;
+            parts.push('⚡ +50');
+          }
+          state.score += gained;
+
           btn.classList.add('is-correct');
-          feedbackEl.textContent = `✨ ¡Correcto! ${hint}`;
-          feedbackEl.classList.add('correct');
+          feedbackEl.textContent = `✨ ¡Correcto! ${q.hint}`;
+          feedbackEl.className = 'feedback correct';
+
+          // Efectos
+          const pos = frameCenterOf(btn);
+          confettiBurst(pos.x, pos.y, 18);
+          floatPts(pos.x, pos.y - 26, `+${gained}`);
+          bumpScore();
         } else {
+          state.streak = 0;
+          state.results[state.qIndex] = false;
           btn.classList.add('is-wrong');
-          const correctBtn = Array.from(allBtns).find((b) => b.dataset.value === answer);
+          const correctBtn = Array.from(allBtns).find((b) => b.dataset.value === q.answer);
           if (correctBtn) correctBtn.classList.add('is-correct');
-          feedbackEl.textContent = `😅 Casi... era "${answer}".`;
-          feedbackEl.classList.add('wrong');
+          feedbackEl.textContent = `😅 Casi… era “${q.answer}”. ${q.hint}`;
+          feedbackEl.className = 'feedback wrong';
         }
+
         feedbackEl.classList.remove('hidden');
+        updateHUD();
+        syncDots(dotsRow);
 
         window.setTimeout(() => {
-          questionIndex++;
-          if (questionIndex < heroesRound.length) {
+          state.qIndex++;
+          if (state.qIndex < total) {
             renderQuestion();
           } else {
-            // Terminó: pasa a la pregunta final
-            showScreen('final');
+            progressFill.style.width = '100%';
             renderHeroines();
-            const fillEl = document.getElementById('progress-fill') as HTMLElement;
-            if (fillEl) fillEl.style.width = '100%';
+            showScreen('final');
           }
-        }, 1800);
-      };
+        }, 1900);
+      }
 
-      // ---------- Héroínas ----------
-      const renderHeroines = () => {
+      // ============================================================
+      // HEROÍNAS
+      // ============================================================
+      function renderHeroines() {
         const grid = document.getElementById('heroine-grid')!;
         grid.innerHTML = heroines
           .map(
             (h) => `
-            <button type="button" class="heroine-btn" data-name="${h.name}" data-role="${h.role}">
-              <span style="font-size:24px;">${h.emoji.split('')[0]}</span>
+            <button type="button" class="heroine-btn ${h.roleClass}" data-name="${h.name}" data-role="${h.role}">
+              <span class="heroine-emoji">${h.emoji}</span>
               <span>${h.name}</span>
-              <span class="role">${h.role}</span>
-            </button>
-          `
+              <span class="heroine-role">${h.role}</span>
+            </button>`
           )
           .join('');
 
-        grid.querySelectorAll<HTMLButtonElement>('.heroine-btn').forEach((btn) => {
-          btn.addEventListener('click', () => {
-            const name = btn.dataset.name!;
-            const role = btn.dataset.role!;
-            showResult(name, role);
+        grid.querySelectorAll<HTMLButtonElement>('.heroine-btn').forEach((b) => {
+          b.addEventListener('click', () => {
+            state.heroine = b.dataset.name || '';
+            showResult();
           });
         });
-      };
+      }
 
-      // ---------- Resultado ----------
-      const showResult = (name: string, role: string) => {
-        const messages: Record<string, string> = {
-          Hanabi: 'Hanabi lanza sus flechas con una precisión increíble, llena de luz y de poder. Como tú cuando juegas: enfocada, segura, sin que nada te detenga.',
-          Miya: 'Miya dispara desde lejos con precisión y paciencia. Clásica y elegante, como la esencia que llevás dentro.',
-          Pharsa: 'Pharsa vuela sobre el campo de batalla con una vista que nadie más tiene. Como tú: siempre viendo las cosas desde otra perspectiva.',
-          'Luo Yi': 'Luo Yi lee los astros y guía con magia antigua. Como tú: siempre conectada con lo que sientes, con esa intuición que no falla.',
-          Estes: 'Estes es de los apoyos más nobles: curar sin esperar nada a cambio. Como tú con los que quieres.',
-          Guinevere: 'Guinevere es elegante, poderosa y tiene un corazón noble. Como tú, Mariela: fuerte por fuera, suave por dentro.',
-          Fanny: 'Fanny es rápida, arriesgada y hace cosas que nadie más se atreve. Como tú.',
-          Kagura: 'Kagura es mágica, llena de luz. Como la magia que le pusiste a mi vida.',
-          Chou: 'Chou nunca se rinde, aguanta todo y vuelve más fuerte. Eso eres tú, Mariela.',
-          Angela: 'Angela cuida, protege y da todo por los suyos. Como tú.'
-        };
+      // ============================================================
+      // RESULTADO
+      // ============================================================
+      function starsFor(correct: number): number {
+        if (correct >= 9) return 3;
+        if (correct >= 7) return 2;
+        if (correct >= 5) return 1;
+        return 0;
+      }
 
-        const message = messages[name] || `Elegiste a ${name}. Si es tu favorita, ya me cae bien. 💛`;
-        const titleEl = document.getElementById('result-title');
-        const msgEl = document.getElementById('result-message');
-        const scoreEl = document.getElementById('final-score');
-        const totalEl = document.getElementById('final-total');
-        if (titleEl) titleEl.textContent = `${name}, ${role}`;
-        if (msgEl) msgEl.textContent = message;
-        if (scoreEl) scoreEl.textContent = String(score);
-        if (totalEl) totalEl.textContent = String(totalQuestions);
+      function showResult() {
+        const stars = starsFor(state.correct);
+
+        // Estrellas
+        const starsRow = document.getElementById('stars-row')!;
+        starsRow.querySelectorAll<HTMLElement>('.star').forEach((s, i) => {
+          s.classList.toggle('is-on', i < stars);
+        });
+
+        // Sello y título
+        const stamp = document.getElementById('result-stamp')!;
+        stamp.textContent =
+          stars === 3 ? '¡Perfecto!' : stars === 2 ? '¡Muy bien!' : stars === 1 ? '¡Bien!' : 'Resultado';
+
+        const titleEl = document.getElementById('result-heroine')!;
+        const h = heroines.find((x) => x.name === state.heroine);
+        titleEl.textContent = h ? `${h.name} · ${h.role}` : '—';
+
+        // Stats
+        (document.getElementById('stat-score')!).textContent = String(state.score);
+        (document.getElementById('stat-correct')!).textContent = `${state.correct} / ${total}`;
+        (document.getElementById('stat-streak')!).textContent = `🔥 x${state.bestStreak}`;
+
+        // Review dots
+        resultDots.innerHTML = state.results
+          .map((ok) => `<span class="q-dot ${ok ? 'is-right' : 'is-wrong'}"></span>`)
+          .join('');
+
+        // Mensaje
+        const msg =
+          heroineMessages[state.heroine] ||
+          `Elegiste a ${state.heroine}. Si es tu favorita, ya me cae bien. 💛`;
+        (document.getElementById('result-message')!).textContent = msg;
+
+        // Mejor puntaje (localStorage)
+        let best = 0;
+        try { best = parseInt(localStorage.getItem(BEST_KEY) || '0', 10) || 0; } catch { best = 0; }
+        const newBest = state.score > best;
+        if (newBest) {
+          try { localStorage.setItem(BEST_KEY, String(state.score)); } catch { /* noop */ }
+        }
+        document.getElementById('new-best')!.classList.toggle('hidden', !newBest);
+        updateBestLine();
+
+        // Confeti si 3 estrellas
+        if (stars === 3) {
+          const r = frame.getBoundingClientRect();
+          confettiBurst(r.width / 2, r.height * 0.25, 30);
+          window.setTimeout(() => confettiBurst(r.width * 0.25, r.height * 0.4, 20), 220);
+          window.setTimeout(() => confettiBurst(r.width * 0.75, r.height * 0.4, 20), 380);
+        }
 
         showScreen('result');
-        sendToWorker(name, role);
-      };
+        sendToWorker();
+      }
 
-      // ---------- Enviar al Worker ----------
-      const sendToWorker = async (heroina: string, rol: string) => {
+      function updateBestLine() {
+        let best = 0;
+        try { best = parseInt(localStorage.getItem(BEST_KEY) || '0', 10) || 0; } catch { best = 0; }
+        const line = document.getElementById('best-score-line')!;
+        const val = document.getElementById('best-score-value')!;
+        if (best > 0) {
+          val.textContent = String(best);
+          line.classList.remove('hidden');
+        } else {
+          line.classList.add('hidden');
+        }
+      }
+
+      // ============================================================
+      // WORKER
+      // ============================================================
+      const workerUrl = 'https://mariela-responses.andyguzman117.workers.dev';
+      async function sendToWorker() {
         try {
-          const formData = new FormData();
-          formData.set('Respuesta', `Heroína favorita: ${heroina}`);
-          formData.set('Mensaje', `Rol: ${rol} | Puntaje en el juego: ${score}/${totalQuestions}`);
-          await fetch(workerUrl, {
-            method: 'POST',
-            body: formData,
-            headers: { Accept: 'application/json' }
-          });
+          const fd = new FormData();
+          fd.set('Respuesta', `Heroína favorita: ${state.heroine}`);
+          fd.set('Mensaje', `Puntaje quiz: ${state.score} | Aciertos: ${state.correct}/10 | Mejor racha: x${state.bestStreak}`);
+          await fetch(workerUrl, { method: 'POST', body: fd, headers: { Accept: 'application/json' } });
         } catch (err) {
           console.warn('No se pudo guardar:', err);
         }
-      };
+      }
+
+      // ============================================================
+      // DEMO (welcome): trío de emojis que rota
+      // ============================================================
+      function startDemo() {
+        const e1 = document.getElementById('demo-e1')!;
+        const e2 = document.getElementById('demo-e2')!;
+        const e3 = document.getElementById('demo-e3')!;
+        let i = 0;
+        const tick = () => {
+          const q = questions[i % questions.length];
+          i++;
+          [e1, e2, e3].forEach((el, k) => {
+            el.textContent = q.emojis[k];
+            el.style.animation = 'none';
+            void el.offsetWidth;
+            el.style.animation = '';
+          });
+        };
+        tick();
+        window.setInterval(tick, 2400);
+      }
+
+      // ============================================================
+      // INICIO
+      // ============================================================
+      document.getElementById('btn-start')?.addEventListener('click', () => {
+        state.qIndex = 0;
+        state.score = 0;
+        state.correct = 0;
+        state.streak = 0;
+        state.bestStreak = 0;
+        state.results = [];
+        state.heroine = '';
+        buildDots();
+        updateHUD();
+        renderQuestion();
+        showScreen('game');
+      });
+
+      updateBestLine();
+      buildDots();
+      startDemo();
     </script>
   </body>
 </html>
