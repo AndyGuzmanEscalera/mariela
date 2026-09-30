@@ -2430,6 +2430,10 @@
       // ============================================================
       resetState();
       render();
+      // ⚠️ El loop arranca UNA sola vez y vive siempre (update()
+      // no hace nada si el juego no está en curso). Así evitamos
+      // cadenas múltiples de requestAnimationFrame.
+      requestAnimationFrame(loop);
     </script>
   </body>
 </html>
