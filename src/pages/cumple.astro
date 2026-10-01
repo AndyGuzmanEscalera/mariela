@@ -62,13 +62,13 @@ const days = [
     frontMessage: 'Hoy quiero recordarte algo sobre cómo eres tú. 💛',
     photo: 'photos/mariela-jueves.jpg',
     requiresPassword: false,
-    gameUrl: 'juego5',
+    gameUrl: 'acai',
     insideTitle: 'Tu bondad y tu servicio',
     insideMessage:
       '📖 Jueves 1 de octubre — Su corazón dispuesto a servir\n\n' +
       '«No nos cansemos, pues, de hacer el bien; porque a su tiempo segaremos, si no desmayamos.» — Gálatas 6:9\n\n' +
       'La Biblia nos invita a hacer el bien a los demás, y en ti encuentro ese deseo sincero de dar la mano, de escuchar y de ayudar a quien lo necesita. Tienes un corazón dispuesto a servir.\n\n' +
-      'Como cada héroe que descubre su verdadero poder, vos me fuiste mostrando cosas nuevas: los açaí bowls, los sabores que no conocía, las primeras veces que se vuelven nuestras. Conocerte ha sido mi mejor quest. Hoy te hice un juego con algo que fue nuestra primera vez juntos — un açaí bowl. Atrépalos todos, Mariela.',
+      'Como cada héroe que descubre su verdadero poder, tú me fuiste mostrando cosas nuevas: los açaí bowls, sabores que no conocía y primeras veces que ahora son recuerdos nuestros. Conocerte ha sido mi mejor aventura.\n\nHoy preparé un juego inspirado en algo que probamos juntos por primera vez: un açaí bowl. Memoriza el pedido, elige los toppings correctos y descubre tu sorpresa, Mariela.',
     insideEmoji: '🌷'
   },
   {
@@ -249,7 +249,7 @@ const days = [
 
           <!-- Estado de error -->
           <div id="response-error" class="response-error hidden">
-            <p>Algo falló al enviar. ¿Podés intentar de nuevo?</p>
+            <p>Algo falló al enviar. ¿Puedes intentar de nuevo?</p>
             <button id="response-retry" type="button" class="btn-retry">Reintentar</button>
           </div>
         </div>
@@ -275,6 +275,7 @@ const days = [
             data-day-password={day.password ?? ''}
             data-day-password-hint={day.passwordHint ?? ''}
             data-day-photo={day.photo ?? ''}
+            data-day-game-url={day.gameUrl ?? ''}
           >
             <!-- Sobre (parte de atrás) -->
             <div class:list={["envelope", "envelope-back", day.photo && "envelope-with-photo"]}>
@@ -1159,6 +1160,7 @@ const days = [
         password: string;
         passwordHint: string;
         photo: string;
+        gameUrl: string;
       };
 
       // Base URL para resolver rutas absolutas de imágenes desde el JS del cliente.
@@ -1256,7 +1258,8 @@ const days = [
         requiresPassword: card.dataset.dayRequiresPassword === 'true',
         password: card.dataset.dayPassword ?? '',
         passwordHint: card.dataset.dayPasswordHint ?? '',
-        photo: card.dataset.dayPhoto ?? ''
+        photo: card.dataset.dayPhoto ?? '',
+        gameUrl: card.dataset.dayGameUrl ?? ''
       });
 
       const showPasswordModal = (day: DayData) => {
