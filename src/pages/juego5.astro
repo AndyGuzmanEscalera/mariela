@@ -1,0 +1,1069 @@
+---
+/**
+ * /juego5 — "Açaí Bowl" · Edición Personal
+ * ---------------------------------------------------------
+ * Juego de helado: caen ingredientes del cielo, Mariela
+ * mueve la copa con mouse/touch/teclado para atraparlos.
+ * Cada ingrediente suma puntos y se suma al scoop del helado.
+ * Si se escapan muchos, pierde vidas.
+ *
+ * Estética: misma familia visual que el juego 4 (morado/dorado,
+ * Cinzel + Cormorant + Inter), pero más cálida y divertida
+ * (paleta heladería: rosas, menta, fresas).
+ *
+ * Resultado (puntaje + composición) se guarda vía Worker.
+ */
+---
+
+<!doctype html>
+<html lang="es" data-base-url={import.meta.env.BASE_URL}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5" />
+    <meta name="theme-color" content="#2A1530" />
+    <title>Açaí Bowl · Para Mariela 🍦</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="acai-body">
+    <div class="magic-dust" aria-hidden="true">
+      {Array.from({ length: 32 }).map((_, i) => (
+        <span
+          class="dust"
+          style={`top:${Math.random() * 100}%; left:${Math.random() * 100}%; animation-delay:${(Math.random() * 6).toFixed(2)}s; animation-duration:${(3 + Math.random() * 4).toFixed(2)}s;`}
+        ></span>
+      ))}
+    </div>
+
+    <main class="relative z-10 min-h-screen flex items-center justify-center px-4 py-6">
+      <div class="acai-frame" id="acai-frame">
+
+        {/* ============ PANTALLA 1: Bienvenida ============ */}
+        <section id="screen-welcome" class="screen screen-active">
+          <div class="welcome-badge">
+            <span>🍦</span>
+            <span>Juego del Açaí</span>
+          </div>
+          <h1 class="acai-title">Arma tu Açaí Bowl</h1>
+          <p class="acai-subtitle">
+            Caen frutas y toppings del cielo.
+            <br />
+            Mueve la copa con el mouse, los dedos o las flechas.
+            <br />
+            ¡Atrapa todo lo que puedas y arma el bowl más bonito!
+          </p>
+
+          <div class="acai-demo">
+            <span class="demo-emoji">🍓</span>
+            <span class="demo-emoji">🍌</span>
+            <span class="demo-emoji">🥝</span>
+            <span class="demo-emoji">🫐</span>
+            <span class="demo-emoji">🥥</span>
+            <span class="demo-emoji">🍯</span>
+          </div>
+
+          <div class="controls-preview">
+            <div class="ctrl-item">
+              <span class="ctrl-key">🖱️</span>
+              <span class="ctrl-label">Mover</span>
+            </div>
+            <div class="ctrl-item">
+              <span class="ctrl-key">← →</span>
+              <span class="ctrl-label">Teclado</span>
+            </div>
+            <div class="ctrl-item">
+              <span class="ctrl-key">🍓</span>
+              <span class="ctrl-label">Atrapar</span>
+            </div>
+          </div>
+
+          <button id="btn-start" type="button" class="game-btn">
+            <span>¡Empezar!</span>
+            <span class="text-xl">🍦</span>
+          </button>
+        </section>
+
+        {/* ============ PANTALLA 2: Juego ============ */}
+        <section id="screen-game" class="screen">
+          <div class="hud-top">
+            <div class="hud-item">
+              <span class="hud-label">Puntaje</span>
+              <span class="hud-strong hud-score" id="hud-score">0</span>
+            </div>
+            <div class="hud-item">
+              <span class="hud-label">Ingredientes</span>
+              <span class="hud-strong" id="hud-count">0</span>
+            </div>
+            <div class="hud-item">
+              <span class="hud-label">Vidas</span>
+              <div class="hud-hearts" id="hud-hearts">
+                <span>❤️</span><span>❤️</span><span>❤️</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="canvas-wrap">
+            <canvas id="game-canvas" width="720" height="380"></canvas>
+            <div class="canvas-instructions">
+              <span class="desktop-only">🖱️ Mouse o ← → para mover la copa · Atrapa los toppings</span>
+              <span class="mobile-only">👆 Toca para mover la copa · Atrapa los toppings</span>
+            </div>
+          </div>
+
+          <div class="combo-bar">
+            <div class="combo-label">🍦 Tu bowl lleva:</div>
+            <div class="combo-slots" id="combo-slots">
+              <div class="combo-slot empty">+</div>
+              <div class="combo-slot empty">+</div>
+              <div class="combo-slot empty">+</div>
+              <div class="combo-slot empty">+</div>
+              <div class="combo-slot empty">+</div>
+              <div class="combo-slot empty">+</div>
+            </div>
+          </div>
+        </section>
+
+        {/* ============ PANTALLA 3: Final ============ */}
+        <section id="screen-result" class="screen">
+          <div class="result-crown">🍦</div>
+          <p class="game-stamp" id="result-stamp">Tu bowl está listo</p>
+          <h2 class="acai-title" id="result-title">¡Buen trabajo!</h2>
+
+          <div class="result-bowl">
+            <div class="bowl-icon">🍧</div>
+            <div class="bowl-content" id="bowl-content">—</div>
+          </div>
+
+          <div class="result-stats">
+            <div class="stat-row">
+              <span class="stat-label">Puntaje final</span>
+              <span class="stat-value" id="stat-score">0</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Ingredientes atrapados</span>
+              <span class="stat-value" id="stat-count">0</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Combo más largo</span>
+              <span class="stat-value" id="stat-streak">0</span>
+            </div>
+          </div>
+
+          <p class="result-message">
+            Armaste el bowl más dulce del mundo. Pero el que más me gusta
+            tiene forma de persona — y siempre lleva tu sonrisa.
+            <br />
+            Hoy te hice un helado de pensamientos, Mariela:
+            <br />
+            uno por cada vez que pensé en vos mientras jugaba.
+          </p>
+
+          <div class="result-footer">
+            <span class="line"></span>
+            <span class="font-script text-2xl text-amber-300">Con cariño, Andy</span>
+            <span class="line"></span>
+          </div>
+
+          <p class="result-note">💛 Guardé tu bowl en un lugar especial.</p>
+        </section>
+
+      </div>
+    </main>
+
+    <style is:global>
+      .acai-body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: 'Inter', system-ui, sans-serif;
+        color: #FFFCF2;
+        background:
+          radial-gradient(ellipse at 50% 0%, rgba(236, 72, 153, 0.18) 0%, transparent 55%),
+          radial-gradient(ellipse at 50% 100%, rgba(168, 85, 247, 0.2) 0%, transparent 55%),
+          linear-gradient(180deg, #2A1530 0%, #4A2E1A 55%, #1F0E1F 100%);
+        background-attachment: fixed;
+        overflow-x: hidden;
+      }
+
+      .magic-dust { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+      .dust {
+        position: absolute;
+        width: 3px; height: 3px;
+        background: #FBCFE8;
+        border-radius: 50%;
+        opacity: 0;
+        box-shadow: 0 0 6px rgba(251, 207, 232, 0.8);
+        animation: floatDust 6s ease-in-out infinite;
+      }
+      @keyframes floatDust {
+        0%, 100% { opacity: 0; transform: translateY(0) scale(0.5); }
+        50% { opacity: 0.75; transform: translateY(-28px) scale(1.3); }
+      }
+
+      .acai-frame {
+        width: 100%;
+        max-width: 760px;
+        background: linear-gradient(135deg, rgba(60, 30, 70, 0.9) 0%, rgba(35, 16, 40, 0.9) 100%);
+        border: 1px solid rgba(255, 192, 203, 0.3);
+        border-radius: 26px;
+        padding: clamp(22px, 4vw, 40px);
+        box-shadow:
+          0 1px 0 rgba(255, 255, 255, 0.08) inset,
+          0 30px 80px -20px rgba(0, 0, 0, 0.7),
+          0 0 80px rgba(236, 72, 153, 0.16);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        text-align: center;
+        position: relative;
+      }
+
+      .screen { display: none; animation: screenIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+      .screen-active { display: block; }
+      @keyframes screenIn {
+        from { opacity: 0; transform: translateY(20px) scale(0.985); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+      }
+      .font-script { font-family: 'Cormorant Garamond', Georgia, serif; }
+
+      .welcome-badge, .game-stamp {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 16px;
+        border: 1px dashed rgba(255, 192, 203, 0.4);
+        border-radius: 999px;
+        color: #FBCFE8;
+        font-size: 11px;
+        letter-spacing: 0.28em;
+        text-transform: uppercase;
+        margin-bottom: 18px;
+      }
+
+      .acai-title {
+        font-family: 'Cinzel', serif;
+        font-size: clamp(28px, 5vw, 40px);
+        font-weight: 700;
+        background: linear-gradient(120deg, #FBCFE8 0%, #EC4899 45%, #A855F7 100%);
+        background-size: 220% auto;
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        margin: 0 0 14px;
+        line-height: 1.15;
+        animation: shimmerTitle 4s linear infinite;
+      }
+      @keyframes shimmerTitle {
+        from { background-position: 0% center; }
+        to { background-position: 220% center; }
+      }
+
+      .acai-subtitle {
+        font-family: 'Cormorant Garamond', serif;
+        font-style: italic;
+        font-size: clamp(15px, 2.4vw, 18px);
+        color: rgba(255, 252, 242, 0.88);
+        line-height: 1.55;
+        margin: 0 0 24px;
+      }
+
+      .acai-demo {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        font-size: clamp(34px, 7vw, 48px);
+        margin-bottom: 18px;
+        filter: drop-shadow(0 6px 20px rgba(236, 72, 153, 0.35));
+      }
+      .demo-emoji {
+        display: inline-block;
+        animation: emojiBounce 1.8s ease-in-out infinite;
+      }
+      .demo-emoji:nth-child(1) { animation-delay: 0s; }
+      .demo-emoji:nth-child(2) { animation-delay: 0.15s; }
+      .demo-emoji:nth-child(3) { animation-delay: 0.3s; }
+      .demo-emoji:nth-child(4) { animation-delay: 0.45s; }
+      .demo-emoji:nth-child(5) { animation-delay: 0.6s; }
+      .demo-emoji:nth-child(6) { animation-delay: 0.75s; }
+      @keyframes emojiBounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px) rotate(5deg); }
+      }
+
+      .controls-preview {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-bottom: 24px;
+      }
+      .ctrl-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 14px;
+        background: rgba(255, 252, 242, 0.045);
+        border: 1px solid rgba(255, 192, 203, 0.22);
+        border-radius: 999px;
+        font-size: 12px;
+      }
+      .ctrl-key { font-family: 'Cinzel', serif; font-weight: 700; color: #FBCFE8; letter-spacing: 0.05em; }
+      .ctrl-label { color: rgba(255, 252, 242, 0.75); font-size: 11px; }
+
+      .game-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        padding: 15px 36px;
+        border-radius: 999px;
+        border: none;
+        background: linear-gradient(135deg, #FBCFE8 0%, #EC4899 100%);
+        color: #4A1942;
+        font-family: 'Cinzel', serif;
+        font-weight: 700;
+        font-size: 15px;
+        letter-spacing: 0.04em;
+        cursor: pointer;
+        box-shadow: 0 12px 34px -10px rgba(236, 72, 153, 0.5);
+        transition: transform 0.25s;
+      }
+      .game-btn:hover { transform: translateY(-2px); }
+
+      /* HUD */
+      .hud-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        gap: 8px;
+      }
+      .hud-item { text-align: center; }
+      .hud-label {
+        font-size: 10px;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: rgba(251, 207, 232, 0.78);
+        display: block;
+        margin-bottom: 4px;
+      }
+      .hud-strong {
+        font-family: 'Cinzel', serif;
+        font-weight: 700;
+        font-size: 18px;
+        color: #FBCFE8;
+      }
+      .hud-score.is-bump { animation: scoreBump 0.4s ease-out; }
+      @keyframes scoreBump {
+        0% { transform: scale(1); }
+        40% { transform: scale(1.3); color: #FBBF24; }
+        100% { transform: scale(1); }
+      }
+      .hud-hearts { font-size: 16px; letter-spacing: 2px; }
+      .hud-heart { display: inline-block; transition: opacity 0.3s, transform 0.3s; }
+      .hud-heart.is-lost { opacity: 0.2; filter: grayscale(1); transform: scale(0.85) rotate(-12deg); }
+
+      .canvas-wrap {
+        position: relative;
+        width: 100%;
+        margin-bottom: 12px;
+      }
+      #game-canvas {
+        width: 100%;
+        height: auto;
+        max-width: 720px;
+        aspect-ratio: 720 / 380;
+        background:
+          radial-gradient(ellipse at 50% 0%, #FBCFE8 0%, #F472B6 30%, #EC4899 60%, #BE185D 100%);
+        border: 1.5px solid rgba(255, 192, 203, 0.4);
+        border-radius: 16px;
+        display: block;
+        margin: 0 auto;
+        cursor: none;
+        touch-action: none;
+        box-shadow: 0 14px 40px -18px rgba(0, 0, 0, 0.6);
+      }
+      .canvas-instructions {
+        position: absolute;
+        top: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(60, 20, 50, 0.55);
+        padding: 5px 14px;
+        border-radius: 999px;
+        font-size: 11px;
+        color: #FBCFE8;
+        letter-spacing: 0.05em;
+        pointer-events: none;
+        white-space: nowrap;
+        border: 1px solid rgba(255, 192, 203, 0.25);
+      }
+      .canvas-instructions .desktop-only { display: inline; }
+      .canvas-instructions .mobile-only { display: none; }
+      @media (hover: none) and (pointer: coarse) {
+        .canvas-instructions .desktop-only { display: none; }
+        .canvas-instructions .mobile-only { display: inline; }
+      }
+
+      /* Combo (ingredientes atrapados) */
+      .combo-bar {
+        background: rgba(255, 252, 242, 0.04);
+        border: 1px solid rgba(255, 192, 203, 0.2);
+        border-radius: 14px;
+        padding: 10px 14px;
+      }
+      .combo-label {
+        font-size: 11px;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: rgba(251, 207, 232, 0.8);
+        margin-bottom: 8px;
+      }
+      .combo-slots {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      .combo-slot {
+        width: 38px; height: 38px;
+        border-radius: 10px;
+        background: rgba(255, 252, 242, 0.04);
+        border: 1px dashed rgba(255, 192, 203, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: rgba(255, 192, 203, 0.45);
+        font-family: 'Cinzel', serif;
+        transition: all 0.3s;
+        animation: slotPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+      }
+      .combo-slot.filled {
+        background: linear-gradient(135deg, rgba(251, 207, 232, 0.18) 0%, rgba(168, 85, 247, 0.18) 100%);
+        border-style: solid;
+        border-color: #FBCFE8;
+        animation: slotPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+      .combo-slot.empty { color: rgba(255, 192, 203, 0.35); }
+      @keyframes slotPop {
+        from { transform: scale(0.4) rotate(-30deg); opacity: 0; }
+        to { transform: scale(1) rotate(0deg); opacity: 1; }
+      }
+
+      /* Floating points */
+      .float-pts {
+        position: absolute;
+        font-family: 'Cinzel', serif;
+        font-weight: 700;
+        font-size: 18px;
+        color: #FBCFE8;
+        text-shadow: 0 2px 6px rgba(60, 20, 50, 0.95);
+        pointer-events: none;
+        z-index: 50;
+        animation: ptsFloat 0.95s ease-out forwards;
+      }
+      @keyframes ptsFloat {
+        from { opacity: 0; transform: translateY(8px) scale(0.8); }
+        25% { opacity: 1; }
+        to { opacity: 0; transform: translateY(-44px) scale(1.2); }
+      }
+
+      /* Resultado */
+      .result-crown {
+        font-size: 64px;
+        margin-bottom: 4px;
+        filter: drop-shadow(0 6px 20px rgba(236, 72, 153, 0.5));
+        animation: crownFloat 3s ease-in-out infinite;
+      }
+      @keyframes crownFloat {
+        0%, 100% { transform: translateY(0) rotate(-3deg); }
+        50% { transform: translateY(-8px) rotate(3deg); }
+      }
+
+      .result-bowl {
+        background:
+          radial-gradient(circle at 50% 30%, rgba(251, 207, 232, 0.2) 0%, transparent 65%),
+          rgba(255, 252, 242, 0.04);
+        border: 1px solid rgba(255, 192, 203, 0.22);
+        border-radius: 18px;
+        padding: 16px 20px;
+        margin: 16px 0;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .bowl-icon { font-size: 56px; filter: drop-shadow(0 4px 14px rgba(236, 72, 153, 0.5)); }
+      .bowl-content {
+        font-family: 'Cormorant Garamond', serif;
+        font-style: italic;
+        font-size: 16px;
+        color: rgba(255, 252, 242, 0.9);
+        text-align: left;
+        flex: 1;
+        line-height: 1.4;
+      }
+
+      .result-stats {
+        background: rgba(255, 252, 242, 0.04);
+        border: 1px solid rgba(255, 192, 203, 0.22);
+        border-radius: 14px;
+        padding: 12px 20px;
+        margin: 12px 0;
+      }
+      .stat-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 7px 0;
+        font-size: 13px;
+        color: rgba(255, 252, 242, 0.88);
+        border-bottom: 1px solid rgba(255, 192, 203, 0.1);
+      }
+      .stat-row:last-child { border-bottom: none; }
+      .stat-label {
+        color: rgba(251, 207, 232, 0.82);
+        font-size: 11px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+      .stat-value { font-family: 'Cinzel', serif; font-weight: 700; color: #FBCFE8; }
+
+      .result-message {
+        font-family: 'Cormorant Garamond', serif;
+        font-style: italic;
+        font-size: clamp(15px, 2.4vw, 18px);
+        line-height: 1.6;
+        color: rgba(255, 252, 242, 0.92);
+        margin: 14px 0 6px;
+        padding: 0 6px;
+      }
+      .result-footer {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        margin: 14px 0;
+      }
+      .result-footer .line {
+        flex: 1;
+        max-width: 60px;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, #FBCFE8, transparent);
+      }
+      .result-note {
+        font-size: 12px;
+        color: rgba(255, 252, 242, 0.62);
+        font-style: italic;
+        margin: 0;
+      }
+    </style>
+
+    <script>
+      // ============================================================
+      // CONFIG
+      // ============================================================
+      const W = 720;
+      const H = 380;
+      const BOWL_Y = H - 30;
+      const BOWL_W = 110;
+      const BOWL_H = 56;
+      const BOWL_SPEED = 320;
+      const TOTAL_INGREDIENTS_TO_WIN = 6;
+
+      type Ing = {
+        emoji: string;
+        label: string;
+        points: number;
+        color: string;
+      };
+
+      const ingredients: Ing[] = [
+        { emoji: '🍓', label: 'fresa', points: 15, color: '#EF4444' },
+        { emoji: '🫐', label: 'arándano', points: 12, color: '#7C3AED' },
+        { emoji: '🍌', label: 'plátano', points: 10, color: '#FBBF24' },
+        { emoji: '🥝', label: 'kiwi', points: 14, color: '#16A34A' },
+        { emoji: '🥥', label: 'coco', points: 10, color: '#FFFCF2' },
+        { emoji: '🍯', label: 'miel', points: 20, color: '#F59E0B' },
+        { emoji: '🍓', label: 'fresa', points: 15, color: '#EF4444' },
+        { emoji: '🍫', label: 'chocolate', points: 18, color: '#7C2D12' },
+        { emoji: '🫐', label: 'arándano', points: 12, color: '#7C3AED' }
+      ];
+
+      // ============================================================
+      // ESTADO
+      // ============================================================
+      type Drop = { x: number; y: number; vy: number; ing: Ing; rot: number; rotV: number; scaleIn: number };
+      type Particle = { x: number; y: number; vx: number; vy: number; life: number; maxLife: number; color: string; size: number; emoji: string };
+
+      const state = {
+        bowlX: (W - BOWL_W) / 2,
+        bowlTargetX: (W - BOWL_W) / 2,
+        drops: [] as Drop[],
+        particles: [] as Particle[],
+        caught: [] as Ing[], // últimos atrapados
+        combo: 0, bestCombo: 0,
+        score: 0,
+        lives: 3,
+        spawnTimer: 0.9,
+        time: 0,
+        lastFrame: performance.now(),
+        gameOver: false,
+        won: false
+      };
+
+      // ============================================================
+      // ENTRADA
+      // ============================================================
+      const keys: Record<string, boolean> = {};
+      let mouseX = W / 2;
+
+      const toLogical = (cx: number, cy: number) => {
+        const r = (document.getElementById('game-canvas') as HTMLCanvasElement).getBoundingClientRect();
+        return { x: ((cx - r.left) / r.width) * W, y: ((cy - r.top) / r.height) * H };
+      };
+
+      function setBowlFromClientX(clientX: number) {
+        const p = toLogical(clientX, 0);
+        mouseX = p.x;
+        state.bowlTargetX = clamp(p.x - BOWL_W / 2, 0, W - BOWL_W);
+      }
+
+      const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
+      const ctx = canvas.getContext('2d')!;
+      const DPR = Math.min(2, window.devicePixelRatio || 1);
+      canvas.width = W * DPR;
+      canvas.height = H * DPR;
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+      canvas.addEventListener('mousemove', (e) => setBowlFromClientX(e.clientX));
+      canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        const t = e.touches[0];
+        if (t) setBowlFromClientX(t.clientX);
+      }, { passive: false });
+      canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const t = e.touches[0];
+        if (t) setBowlFromClientX(t.clientX);
+      }, { passive: false });
+
+      window.addEventListener('keydown', (e) => {
+        keys[e.key] = true;
+        keys[e.code] = true;
+      });
+      window.addEventListener('keyup', (e) => {
+        keys[e.key] = false;
+        keys[e.code] = false;
+      });
+
+      function clamp(v: number, a: number, b: number) {
+        return Math.max(a, Math.min(b, v));
+      }
+
+      // ============================================================
+      // FÁBRICAS
+      // ============================================================
+      function spawnDrop() {
+        const ing = ingredients[Math.floor(Math.random() * ingredients.length)];
+        state.drops.push({
+          x: Math.random() * (W - 30) + 15,
+          y: -30,
+          vy: 60 + Math.random() * 50 + state.combo * 2, // cae más rápido con combo
+          ing,
+          rot: Math.random() * Math.PI * 2,
+          rotV: (Math.random() - 0.5) * 4,
+          scaleIn: 0
+        });
+      }
+
+      function burst(x: number, y: number, color: string, count = 8, emoji = '✨') {
+        for (let i = 0; i < count; i++) {
+          const a = (Math.PI * 2 * i) / count + Math.random() * 0.5;
+          const s = 70 + Math.random() * 60;
+          state.particles.push({
+            x, y,
+            vx: Math.cos(a) * s,
+            vy: Math.sin(a) * s - 30,
+            life: 0.6,
+            maxLife: 0.6,
+            color,
+            size: 3 + Math.random() * 3,
+            emoji: emoji
+          });
+        }
+      }
+
+      function floatPts(x: number, y: number, text: string, color = '#FBCFE8') {
+        const el = document.createElement('span');
+        el.className = 'float-pts';
+        el.style.color = color;
+        el.textContent = text;
+        el.style.left = `${x}px`;
+        el.style.top = `${y}px`;
+        (document.getElementById('acai-frame')!).appendChild(el);
+        window.setTimeout(() => el.remove(), 1000);
+      }
+
+      function framePosOf(clientX: number, clientY: number) {
+        const fr = (document.getElementById('acai-frame') as HTMLElement).getBoundingClientRect();
+        return { x: clientX - fr.left, y: clientY - fr.top };
+      }
+
+      // ============================================================
+      // ACTUALIZACIÓN
+      // ============================================================
+      function update(dt: number) {
+        state.time += dt;
+        if (state.gameOver) return;
+
+        // Mover bowl (mouse o teclado)
+        let vx = 0;
+        if (keys['ArrowLeft'] || keys['a'] || keys['A']) vx -= BOWL_SPEED;
+        if (keys['ArrowRight'] || keys['d'] || keys['D']) vx += BOWL_SPEED;
+        if (vx !== 0) {
+          state.bowlTargetX = clamp(state.bowlTargetX + vx * dt, 0, W - BOWL_W);
+        }
+        state.bowlX += (state.bowlTargetX - state.bowlX) * Math.min(1, dt * 14);
+
+        // Spawn
+        state.spawnTimer -= dt;
+        if (state.spawnTimer <= 0) {
+          spawnDrop();
+          state.spawnTimer = Math.max(0.42, 1.2 - state.combo * 0.03);
+        }
+
+        // Caída de ingredientes
+        const bowlLeft = state.bowlX;
+        const bowlRight = state.bowlX + BOWL_W;
+        for (const d of state.drops) {
+          d.y += d.vy * dt;
+          d.rot += d.rotV * dt;
+          d.scaleIn = Math.min(1, d.scaleIn + dt * 6);
+
+          // Captura (cuando está en la "boca" del bowl)
+          const inBowlX = d.x > bowlLeft + 6 && d.x < bowlRight - 6;
+          if (inBowlX && d.y > BOWL_Y - 18 && d.y < BOWL_Y + 6) {
+            // ¡Atrapado!
+            state.score += d.ing.points;
+            state.combo++;
+            state.bestCombo = Math.max(state.bestCombo, state.combo);
+            state.caught.push(d.ing);
+            if (state.caught.length > TOTAL_INGREDIENTS_TO_WIN) state.caught.shift();
+
+            // Bonus combo
+            if (state.combo >= 3) {
+              state.score += (state.combo - 2) * 5;
+            }
+
+            burst(d.x, d.y, d.ing.color, 12, d.ing.emoji);
+            const fr = (document.getElementById('acai-frame') as HTMLElement).getBoundingClientRect();
+            const cnv = (document.getElementById('game-canvas') as HTMLCanvasElement).getBoundingClientRect();
+            const fx = (cnv.left - fr.left) + d.x;
+            const fy = (cnv.top - fr.top) + d.y;
+            floatPts(fx, fy, `+${d.ing.points}`, '#FBCFE8');
+
+            // Actualizar slot del HUD
+            updateComboSlots();
+
+            // Verificar victoria
+            if (state.score >= 200 && !state.won) {
+              // condición de victoria: 200 pts alcanzados
+              state.won = true;
+              state.gameOver = true;
+              window.setTimeout(showResult, 600);
+            }
+
+            d.y = H + 100; // marca para eliminar
+          }
+        }
+        state.drops = state.drops.filter((d) => d.y < H + 50);
+
+        // Ingredientes perdidos (los que no se atraparon)
+        for (const d of [...state.drops]) {
+          if (d.y > H + 40) {
+            state.combo = 0;
+            state.lives--;
+            burst(d.x, BOWL_Y - 20, '#9CA3AF', 4, '💨');
+            if (state.lives <= 0) {
+              state.gameOver = true;
+              window.setTimeout(showResult, 700);
+            }
+          }
+        }
+        state.drops = state.drops.filter((d) => d.y < H + 50);
+
+        // Partículas
+        for (const p of state.particles) {
+          p.x += p.vx * dt;
+          p.y += p.vy * dt;
+          p.vy += 90 * dt;
+          p.life -= dt;
+        }
+        state.particles = state.particles.filter((p) => p.life > 0);
+      }
+
+      function updateComboSlots() {
+        const slots = document.querySelectorAll<HTMLElement>('.combo-slot');
+        slots.forEach((s, i) => {
+          const ing = state.caught[i];
+          s.innerHTML = '';
+          s.classList.remove('filled', 'empty');
+          if (ing) {
+            s.classList.add('filled');
+            s.textContent = ing.emoji;
+          } else {
+            s.classList.add('empty');
+            s.textContent = '+';
+          }
+          s.style.animation = 'none';
+          void s.offsetWidth;
+          s.style.animation = `slotPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) ${i * 0.05}s`;
+        });
+      }
+
+      // ============================================================
+      // RENDER
+      // ============================================================
+      function drawBackground() {
+        // Cielo (rosa/morado degradado ya está en CSS)
+        // Estrellas decorativas
+        for (let i = 0; i < 22; i++) {
+          const sx = (i * 113.7) % W;
+          const sy = (i * 47.3) % (BOWL_Y - 80);
+          const tw = 0.4 + 0.5 * Math.abs(Math.sin(state.time * 1.6 + i));
+          ctx.globalAlpha = tw * 0.85;
+          ctx.fillStyle = '#FFFCF2';
+          ctx.beginPath();
+          ctx.arc(sx, sy, 1.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      function drawCounter() {
+        ctx.save();
+        ctx.font = '700 22px Cinzel, serif';
+        ctx.fillStyle = 'rgba(74, 24, 64, 0.5)';
+        ctx.textAlign = 'center';
+        ctx.fillText('🍓 Açaí Bowl', W / 2, 32);
+        ctx.font = 'italic 13px "Cormorant Garamond", serif';
+        ctx.fillStyle = 'rgba(74, 24, 64, 0.45)';
+        ctx.fillText('mientras más atrapes, más dulce', W / 2, 50);
+        ctx.restore();
+      }
+
+      function drawIngredients() {
+        for (const d of state.drops) {
+          const s = d.scaleIn;
+          ctx.save();
+          ctx.translate(d.x, d.y);
+          ctx.rotate(d.rot);
+          ctx.scale(s, s);
+          // sombra
+          ctx.globalAlpha = 0.25 * s;
+          ctx.fillStyle = '#000';
+          ctx.beginPath();
+          ctx.ellipse(0, 8, 14, 4, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.globalAlpha = s;
+          // emoji
+          ctx.font = '34px serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(d.ing.emoji, 0, 0);
+          ctx.restore();
+        }
+      }
+
+      function drawParticles() {
+        for (const p of state.particles) {
+          const a = clamp(p.life / p.maxLife, 0, 1);
+          ctx.globalAlpha = a;
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fill();
+          if (p.emoji) {
+            ctx.font = `${10 + p.size * 2}px serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(p.emoji, p.x, p.y);
+          }
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      function drawBowl() {
+        const x = state.bowlX;
+        const y = BOWL_Y;
+
+        // sombra
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.beginPath();
+        ctx.ellipse(x + BOWL_W / 2, y + BOWL_H - 4, BOWL_W / 2 + 8, 7, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // copa (bowl)
+        const bGrad = ctx.createLinearGradient(x, y, x, y + BOWL_H);
+        bGrad.addColorStop(0, '#F472B6');
+        bGrad.addColorStop(1, '#9D174D');
+        ctx.fillStyle = bGrad;
+        ctx.beginPath();
+        ctx.moveTo(x + 6, y);
+        ctx.quadraticCurveTo(x + BOWL_W / 2, y + BOWL_H + 8, x + BOWL_W - 6, y);
+        ctx.quadraticCurveTo(x + BOWL_W - 12, y - 4, x + BOWL_W - 6, y - 4);
+        ctx.lineTo(x + 6, y - 4);
+        ctx.quadraticCurveTo(x + 12, y - 4, x + 6, y);
+        ctx.closePath();
+        ctx.fill();
+
+        // borde
+        ctx.strokeStyle = 'rgba(255, 192, 203, 0.7)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x + BOWL_W - 6, y);
+        ctx.quadraticCurveTo(x + BOWL_W / 2, y + BOWL_H + 8, x + 6, y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.ellipse(x + BOWL_W / 2, y - 4, BOWL_W / 2 - 6, 4, 0, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // helado dentro (acumulado)
+        if (state.caught.length > 0) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.ellipse(x + BOWL_W / 2, y - 4, BOWL_W / 2 - 8, 6, 0, 0, Math.PI * 2);
+          ctx.clip();
+          // base blanca
+          ctx.fillStyle = '#FFF8FA';
+          ctx.fillRect(x - 4, y - 12, BOWL_W + 8, 20);
+          // toppings dentro
+          for (let i = 0; i < state.caught.length; i++) {
+            const tx = x + 14 + i * 14;
+            const ty = y - 8 + Math.sin(state.time * 2 + i) * 1.4;
+            ctx.font = '18px serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(state.caught[i].emoji, tx, ty);
+          }
+          ctx.restore();
+        }
+
+        // combo indicator flotante
+        if (state.combo >= 2) {
+          ctx.save();
+          ctx.font = '700 14px Cinzel, serif';
+          ctx.textAlign = 'center';
+          ctx.fillStyle = '#FBBF24';
+          ctx.globalAlpha = 0.9;
+          const cy = y - 22 + Math.sin(state.time * 6) * 2;
+          ctx.fillText(`🔥 x${state.combo}`, x + BOWL_W / 2, cy);
+          ctx.restore();
+        }
+      }
+
+      function drawCursor() {
+        // pequeño indicador en mouse (pc)
+        const isTouch = matchMedia('(hover: none) and (pointer: coarse)').matches;
+        if (isTouch) return;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(mouseX, BOWL_Y - 38, 6, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      function render() {
+        ctx.clearRect(0, 0, W, H);
+        drawBackground();
+        drawCounter();
+        drawIngredients();
+        drawParticles();
+        drawBowl();
+        drawCursor();
+      }
+
+      // ============================================================
+      // GAME LOOP (loop único)
+      // ============================================================
+      function loop(now: number) {
+        const dt = Math.min(0.05, (now - state.lastFrame) / 1000);
+        state.lastFrame = now;
+        update(dt);
+        render();
+        requestAnimationFrame(loop);
+      }
+
+      // ============================================================
+      // RESULTADO
+      // ============================================================
+      function showResult() {
+        const won = state.won;
+        const stamp = document.getElementById('result-stamp')!;
+        stamp.textContent = won ? 'Tu bowl está listo 🍓' : 'Se escaparon algunos';
+
+        const titleEl = document.getElementById('result-title')!;
+        titleEl.textContent = won
+          ? '¡Tu açaí bowl quedó hermoso!'
+          : '¡Casi lo logras!';
+
+        const content = document.getElementById('bowl-content')!;
+        if (state.caught.length > 0) {
+          const counts: Record<string, number> = {};
+          for (const c of state.caught) counts[c.label] = (counts[c.label] || 0) + 1;
+          const items = Object.entries(counts)
+            .map(([l, n]) => (n > 1 ? `${n}× ${l}` : `1× ${l}`))
+            .join(', ');
+          content.textContent = `Lleva: ${items}`;
+        } else {
+          content.textContent = 'Tu bowl quedó vacío, pero el cariño igual cuenta 💛';
+        }
+
+        (document.getElementById('stat-score')!).textContent = String(state.score);
+        (document.getElementById('stat-count')!).textContent = String(state.caught.length);
+        (document.getElementById('stat-streak')!).textContent = `x${state.bestCombo}`;
+
+        showScreen('result');
+        sendToWorker(won);
+      }
+
+      const workerUrl = 'https://mariela-responses.andyguzman117.workers.dev';
+      async function sendToWorker(won: boolean) {
+        try {
+          const fd = new FormData();
+          const ingList = state.caught.map((c) => c.label).join(', ') || 'ninguno';
+          fd.set('Respuesta', won ? 'Açaí Bowl completado' : 'Açaí Bowl (incompleto)');
+          fd.set('Mensaje', `Puntaje: ${state.score} | Atrapados: ${state.caught.length}/6 | Combo: x${state.bestCombo} | Ing: ${ingList}`);
+          await fetch(workerUrl, { method: 'POST', body: fd, headers: { Accept: 'application/json' } });
+        } catch (err) {
+          console.warn('No se pudo guardar:', err);
+        }
+      }
+
+      // ============================================================
+      // INICIO
+      // ============================================================
+      document.getElementById('btn-start')?.addEventListener('click', () => {
+        state.bowlX = state.bowlTargetX = (W - BOWL_W) / 2;
+        state.drops = [];
+        state.particles = [];
+        state.caught = [];
+        state.combo = 0;
+        state.bestCombo = 0;
+        state.score = 0;
+        state.lives = 3;
+        state.spawnTimer = 0.7;
+        state.gameOver = false;
+        state.won = false;
+        updateComboSlots();
+        showScreen('game');
+        state.lastFrame = performance.now();
+      });
+
+      state.lastFrame = performance.now();
+      requestAnimationFrame(loop);
+    </script>
+  </body>
+</html>
