@@ -421,7 +421,7 @@ const days = [
             </button>
             <a
               id="btn-game-link"
-              href={`${import.meta.env.BASE_URL}juego`}
+              href="#"
               class="btn-play-game hidden"
             >
               <span class="text-lg">🎮</span>
@@ -1292,6 +1292,7 @@ const days = [
         if (gameLink) {
           if (!day.gameUrl || day.id === 'martes') {
             gameLink.classList.add('hidden');
+            gameLink.setAttribute('href', '#');
           } else {
             gameLink.classList.remove('hidden');
             gameLink.setAttribute('href', `${BASE_URL}${day.gameUrl}`);
