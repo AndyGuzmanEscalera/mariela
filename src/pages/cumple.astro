@@ -24,6 +24,7 @@ const days = [
     requiresPassword: true,
     password: '26',
     passwordHint: '¿Cuántos años cumpliste el año que nos conocimos?',
+    gameUrl: 'juego4',
     insideTitle: 'Tu esencia y tu valentía',
     insideMessage:
       '📖 Martes 29 de septiembre — Su fortaleza e integridad\n\n' +
@@ -43,6 +44,7 @@ const days = [
     frontMessage: 'Hoy quiero recordarte algo sobre tu forma de ser. 💛',
     photo: 'photos/mariela-miercoles.jpeg',
     requiresPassword: false,
+    gameUrl: 'juego',
     insideTitle: 'Tu pasión y entrega',
     insideMessage:
       '📖 Miércoles 30 de septiembre — Su pasión por hacer las cosas bien\n\n' +
@@ -56,12 +58,16 @@ const days = [
     date: '2026-10-01',
     dayName: 'Jueves',
     dateLabel: '1 de Octubre',
-    title: 'Algo viene mañana...',
-    frontMessage: 'Pronto descubrirás algo nuevo 💛',
+    title: 'Su corazón dispuesto a servir',
+    frontMessage: 'Hoy quiero recordarte algo sobre cómo eres tú. 💛',
+    photo: 'photos/mariela-jueves.jpeg',
     requiresPassword: false,
-    insideTitle: 'Mensaje del día 3',
+    gameUrl: 'juego5',
+    insideTitle: 'Tu bondad y tu servicio',
     insideMessage:
-      '⚠️ EDITAR: Aquí va tu mensaje personalizado para el jueves 1 de octubre. Reemplaza este texto en src/pages/cumple.astro (array days, objeto jueves).',
+      '📖 Jueves 1 de octubre — Su corazón dispuesto a servir\n\n' +
+      '«No nos cansemos, pues, de hacer el bien; porque a su tiempo segaremos, si no desmayamos.» — Gálatas 6:9\n\n' +
+      'La Biblia nos invita a hacer el bien a los demás, y en ti encuentro ese deseo sincero de dar la mano, de escuchar y de ayudar a quien lo necesita. Tienes un corazón dispuesto a servir.',
     insideEmoji: '🌷'
   },
   {
@@ -73,6 +79,7 @@ const days = [
     title: 'Algo viene mañana...',
     frontMessage: 'Pronto descubrirás algo nuevo 💛',
     requiresPassword: false,
+    gameUrl: 'juego2',
     insideTitle: 'Mensaje del día 4',
     insideMessage:
       '⚠️ EDITAR: Aquí va tu mensaje personalizado para el viernes 2 de octubre. Reemplaza este texto en src/pages/cumple.astro (array days, objeto viernes).',
@@ -87,6 +94,7 @@ const days = [
     title: 'Mañana es tu día...',
     frontMessage: 'Mañana es un día muy especial. 🌻',
     requiresPassword: false,
+    gameUrl: 'juego3',
     insideTitle: 'Mensaje del día 5',
     insideMessage:
       '⚠️ EDITAR: Aquí va tu mensaje personalizado para el sábado 3 de octubre. Reemplaza este texto en src/pages/cumple.astro (array days, objeto sabado).',
@@ -101,6 +109,7 @@ const days = [
     title: 'Feliz cumpleaños, Mariela',
     frontMessage: 'Hoy es tu día, mi amor. 🌻💛',
     requiresPassword: false,
+    gameUrl: 'juego4',
     insideTitle: 'Feliz cumpleaños, Mariela',
     insideMessage:
       '⚠️ EDITAR: Aquí va tu mensaje personalizado para el domingo 4 de octubre (su cumpleaños). Reemplaza este texto en src/pages/cumple.astro (array days, objeto domingo).',
@@ -1284,6 +1293,7 @@ const days = [
             gameLink.classList.add('hidden');
           } else {
             gameLink.classList.remove('hidden');
+            if (day.gameUrl) gameLink.setAttribute('href', `${BASE_URL}${day.gameUrl}`);
           }
         }
 

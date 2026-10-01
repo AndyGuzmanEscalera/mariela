@@ -1469,26 +1469,37 @@
       // ============================================================
       // INICIO
       // ============================================================
-      document.getElementById('btn-start')?.addEventListener('click', () => {
-        state.bowlX = state.bowlTargetX = (W - BOWL_W) / 2;
-        state.drops = [];
-        state.particles = [];
-        state.caught = [];
-        state.combo = 0;
-        state.bestCombo = 0;
-        state.score = 0;
-        state.lives = 3;
-        state.spawnTimer = 0.7;
-        state.gameOver = false;
-        state.won = false;
-        state.x2Timer = 0;
-        state.freezeTimer = 0;
-        state.shieldTimer = 0;
-        state.face = 'neutral';
-        updateComboSlots();
-        showScreen('game');
-        state.lastFrame = performance.now();
-      });
+      function init() {
+        const btn = document.getElementById('btn-start');
+        if (btn) {
+          btn.addEventListener('click', () => {
+            state.bowlX = state.bowlTargetX = (W - BOWL_W) / 2;
+            state.drops = [];
+            state.particles = [];
+            state.caught = [];
+            state.combo = 0;
+            state.bestCombo = 0;
+            state.score = 0;
+            state.lives = 3;
+            state.spawnTimer = 0.7;
+            state.gameOver = false;
+            state.won = false;
+            state.x2Timer = 0;
+            state.freezeTimer = 0;
+            state.shieldTimer = 0;
+            state.face = 'neutral';
+            updateComboSlots();
+            showScreen('game');
+            state.lastFrame = performance.now();
+          });
+        }
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
 
       state.lastFrame = performance.now();
       requestAnimationFrame(loop);
