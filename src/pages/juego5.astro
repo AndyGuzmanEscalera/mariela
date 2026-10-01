@@ -1,17 +1,19 @@
 ---
 /**
- * /juego5 — "Açaí Bowl" · Edición Personal
+ * /juego5 — "Açaí Bowl" · Edición Mejorada
  * ---------------------------------------------------------
- * Juego de helado: caen ingredientes del cielo, Mariela
- * mueve la copa con mouse/touch/teclado para atraparlos.
- * Cada ingrediente suma puntos y se suma al scoop del helado.
- * Si se escapan muchos, pierde vidas.
+ * Mariela atrapa ingredientes del cielo con su copa.
  *
- * Estética: misma familia visual que el juego 4 (morado/dorado,
- * Cinzel + Cormorant + Inter), pero más cálida y divertida
- * (paleta heladería: rosas, menta, fresas).
+ * Features mejoradas:
+ *  · Copa con expresión facial (feliz, sorprendida, asustada)
+ *  · Sistema de combos con poderes (x2, escudo, freeze)
+ *  · Power-ups especiales que caen del cielo
+ *  · Estela arcoíris en combos altos
+ *  · Pantalla final épica con Mariela Chef y corona
+ *  · Vibración visual al perder vida
+ *  · Burbujas de partículas de fondo
  *
- * Resultado (puntaje + composición) se guarda vía Worker.
+ * Resultado se guarda vía Worker.
  */
 ---
 
@@ -21,7 +23,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5" />
     <meta name="theme-color" content="#2A1530" />
-    <title>Açaí Bowl · Para Mariela 🍦</title>
+    <title>Açaí Bowl · Para Mariela 🍓</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -30,11 +32,12 @@
     />
   </head>
   <body class="acai-body">
-    <div class="magic-dust" aria-hidden="true">
-      {Array.from({ length: 32 }).map((_, i) => (
+    <!-- burbujas de fondo -->
+    <div class="bubbles" aria-hidden="true">
+      {Array.from({ length: 18 }).map((_, i) => (
         <span
-          class="dust"
-          style={`top:${Math.random() * 100}%; left:${Math.random() * 100}%; animation-delay:${(Math.random() * 6).toFixed(2)}s; animation-duration:${(3 + Math.random() * 4).toFixed(2)}s;`}
+          class="bubble"
+          style={`left:${Math.random() * 100}%; animation-delay:${(Math.random() * 8).toFixed(2)}s; animation-duration:${(10 + Math.random() * 8).toFixed(2)}s; --size:${4 + Math.random() * 6}px;`}
         ></span>
       ))}
     </div>
@@ -45,7 +48,7 @@
         {/* ============ PANTALLA 1: Bienvenida ============ */}
         <section id="screen-welcome" class="screen screen-active">
           <div class="welcome-badge">
-            <span>🍦</span>
+            <span>🍓</span>
             <span>Juego del Açaí</span>
           </div>
           <h1 class="acai-title">Arma tu Açaí Bowl</h1>
@@ -54,7 +57,7 @@
             <br />
             Mueve la copa con el mouse, los dedos o las flechas.
             <br />
-            ¡Atrapa todo lo que puedas y arma el bowl más bonito!
+            ¡Atrapa todo lo que puedas y forma el bowl más dulce!
           </p>
 
           <div class="acai-demo">
@@ -62,23 +65,20 @@
             <span class="demo-emoji">🍌</span>
             <span class="demo-emoji">🥝</span>
             <span class="demo-emoji">🫐</span>
-            <span class="demo-emoji">🥥</span>
+            <span class="demo-emoji">🍫</span>
             <span class="demo-emoji">🍯</span>
           </div>
 
+          <div class="powerups-preview">
+            <div class="powerup-pill"><span class="pu-icon">🌟</span> Fresa Dorada (2x puntos)</div>
+            <div class="powerup-pill"><span class="pu-icon">❄️</span> Copa Helada (slow)</div>
+            <div class="powerup-pill"><span class="pu-icon">⭐</span> Estrella (¡+100!)</div>
+          </div>
+
           <div class="controls-preview">
-            <div class="ctrl-item">
-              <span class="ctrl-key">🖱️</span>
-              <span class="ctrl-label">Mover</span>
-            </div>
-            <div class="ctrl-item">
-              <span class="ctrl-key">← →</span>
-              <span class="ctrl-label">Teclado</span>
-            </div>
-            <div class="ctrl-item">
-              <span class="ctrl-key">🍓</span>
-              <span class="ctrl-label">Atrapar</span>
-            </div>
+            <div class="ctrl-item"><span class="ctrl-key">🖱️</span><span class="ctrl-label">Mover</span></div>
+            <div class="ctrl-item"><span class="ctrl-key">← →</span><span class="ctrl-label">Teclado</span></div>
+            <div class="ctrl-item"><span class="ctrl-key">🍓</span><span class="ctrl-label">Atrapar</span></div>
           </div>
 
           <button id="btn-start" type="button" class="game-btn">
@@ -95,22 +95,28 @@
               <span class="hud-strong hud-score" id="hud-score">0</span>
             </div>
             <div class="hud-item">
-              <span class="hud-label">Ingredientes</span>
-              <span class="hud-strong" id="hud-count">0</span>
+              <span class="hud-label">Combo</span>
+              <span class="hud-streak" id="hud-streak">—</span>
             </div>
             <div class="hud-item">
               <span class="hud-label">Vidas</span>
               <div class="hud-hearts" id="hud-hearts">
-                <span>❤️</span><span>❤️</span><span>❤️</span>
+                <span class="hud-heart">❤️</span><span class="hud-heart">❤️</span><span class="hud-heart">❤️</span>
               </div>
             </div>
+          </div>
+
+          {/* Indicador de power-up activo */}
+          <div class="powerup-banner hidden" id="powerup-banner">
+            <span id="powerup-icon">🌟</span>
+            <span id="powerup-text">Puntos x2</span>
           </div>
 
           <div class="canvas-wrap">
             <canvas id="game-canvas" width="720" height="380"></canvas>
             <div class="canvas-instructions">
-              <span class="desktop-only">🖱️ Mouse o ← → para mover la copa · Atrapa los toppings</span>
-              <span class="mobile-only">👆 Toca para mover la copa · Atrapa los toppings</span>
+              <span class="desktop-only">🖱️ Mouse o ← → para mover · Atrapa todo 🍓</span>
+              <span class="mobile-only">👆 Toca para mover · Atrapa todo 🍓</span>
             </div>
           </div>
 
@@ -128,47 +134,60 @@
         </section>
 
         {/* ============ PANTALLA 3: Final ============ */}
-        <section id="screen-result" class="screen">
-          <div class="result-crown">🍦</div>
-          <p class="game-stamp" id="result-stamp">Tu bowl está listo</p>
-          <h2 class="acai-title" id="result-title">¡Buen trabajo!</h2>
-
-          <div class="result-bowl">
-            <div class="bowl-icon">🍧</div>
-            <div class="bowl-content" id="bowl-content">—</div>
+        <section id="screen-result" class="screen result-screen">
+          <div class="confetti-bg" aria-hidden="true">
+            {Array.from({ length: 24 }).map((_, i) => (
+              <span class="confetti-piece" style={`left:${Math.random() * 100}%; animation-delay:${(Math.random() * 2).toFixed(2)}s; --dur:${(3 + Math.random() * 2).toFixed(1)}s;`}></span>
+            ))}
           </div>
 
-          <div class="result-stats">
-            <div class="stat-row">
-              <span class="stat-label">Puntaje final</span>
-              <span class="stat-value" id="stat-score">0</span>
+          <div class="result-content">
+            <div class="result-crown">🍦</div>
+            <p class="game-stamp" id="result-stamp">Tu bowl está listo</p>
+            <h2 class="acai-title" id="result-title">¡Hermoso!</h2>
+
+            {/* Mariela Chef (preview visual) */}
+            <div class="chef-mariela" id="chef-mariela"></div>
+
+            <div class="result-bowl">
+              <div class="bowl-icon">🍧</div>
+              <div class="bowl-content" id="bowl-content">—</div>
             </div>
-            <div class="stat-row">
-              <span class="stat-label">Ingredientes atrapados</span>
-              <span class="stat-value" id="stat-count">0</span>
+
+            <div class="result-stats">
+              <div class="stat-row">
+                <span class="stat-label">Puntaje final</span>
+                <span class="stat-value" id="stat-score">0</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-label">Ingredientes atrapados</span>
+                <span class="stat-value" id="stat-count">0</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-label">Mejor combo</span>
+                <span class="stat-value" id="stat-streak">0</span>
+              </div>
             </div>
-            <div class="stat-row">
-              <span class="stat-label">Combo más largo</span>
-              <span class="stat-value" id="stat-streak">0</span>
+
+            <p class="result-message">
+              Armaste el bowl más dulce del mundo. Pero el que más me gusta
+              tiene forma de persona — y siempre lleva tu sonrisa.
+              <br /><br />
+              Hoy te hice un helado de <em>pensamientos</em>, Mariela:
+              <br />
+              uno por cada vez que pensé en vos mientras jugaba.
+              <br />
+              <span class="result-punchline">Y créeme, fueron muchos. 💛</span>
+            </p>
+
+            <div class="result-footer">
+              <span class="line"></span>
+              <span class="font-script text-2xl text-amber-300">Con cariño, Andy</span>
+              <span class="line"></span>
             </div>
+
+            <p class="result-note">💛 Guardé tu bowl en un lugar especial.</p>
           </div>
-
-          <p class="result-message">
-            Armaste el bowl más dulce del mundo. Pero el que más me gusta
-            tiene forma de persona — y siempre lleva tu sonrisa.
-            <br />
-            Hoy te hice un helado de pensamientos, Mariela:
-            <br />
-            uno por cada vez que pensé en vos mientras jugaba.
-          </p>
-
-          <div class="result-footer">
-            <span class="line"></span>
-            <span class="font-script text-2xl text-amber-300">Con cariño, Andy</span>
-            <span class="line"></span>
-          </div>
-
-          <p class="result-note">💛 Guardé tu bowl en un lugar especial.</p>
         </section>
 
       </div>
@@ -181,39 +200,42 @@
         font-family: 'Inter', system-ui, sans-serif;
         color: #FFFCF2;
         background:
-          radial-gradient(ellipse at 50% 0%, rgba(236, 72, 153, 0.18) 0%, transparent 55%),
-          radial-gradient(ellipse at 50% 100%, rgba(168, 85, 247, 0.2) 0%, transparent 55%),
+          radial-gradient(ellipse at 50% 0%, rgba(236, 72, 153, 0.22) 0%, transparent 55%),
+          radial-gradient(ellipse at 50% 100%, rgba(168, 85, 247, 0.22) 0%, transparent 55%),
           linear-gradient(180deg, #2A1530 0%, #4A2E1A 55%, #1F0E1F 100%);
         background-attachment: fixed;
         overflow-x: hidden;
       }
 
-      .magic-dust { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
-      .dust {
+      /* Burbujas flotando */
+      .bubbles { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+      .bubble {
         position: absolute;
-        width: 3px; height: 3px;
-        background: #FBCFE8;
+        bottom: -20px;
+        width: var(--size, 6px);
+        height: var(--size, 6px);
         border-radius: 50%;
-        opacity: 0;
-        box-shadow: 0 0 6px rgba(251, 207, 232, 0.8);
-        animation: floatDust 6s ease-in-out infinite;
+        background: radial-gradient(circle at 30% 30%, rgba(255, 192, 203, 0.7), rgba(236, 72, 153, 0.2));
+        animation: bubbleRise linear infinite;
       }
-      @keyframes floatDust {
-        0%, 100% { opacity: 0; transform: translateY(0) scale(0.5); }
-        50% { opacity: 0.75; transform: translateY(-28px) scale(1.3); }
+      @keyframes bubbleRise {
+        0% { transform: translateY(0) scale(0.6); opacity: 0; }
+        10% { opacity: 0.8; }
+        90% { opacity: 0.4; }
+        100% { transform: translateY(-110vh) scale(1); opacity: 0; }
       }
 
       .acai-frame {
         width: 100%;
         max-width: 760px;
-        background: linear-gradient(135deg, rgba(60, 30, 70, 0.9) 0%, rgba(35, 16, 40, 0.9) 100%);
+        background: linear-gradient(135deg, rgba(60, 30, 70, 0.92) 0%, rgba(35, 16, 40, 0.92) 100%);
         border: 1px solid rgba(255, 192, 203, 0.3);
         border-radius: 26px;
         padding: clamp(22px, 4vw, 40px);
         box-shadow:
           0 1px 0 rgba(255, 255, 255, 0.08) inset,
-          0 30px 80px -20px rgba(0, 0, 0, 0.7),
-          0 0 80px rgba(236, 72, 153, 0.16);
+          0 30px 80px -20px rgba(0, 0, 0, 0.75),
+          0 0 80px rgba(236, 72, 153, 0.18);
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
         text-align: center;
@@ -227,6 +249,7 @@
         to { opacity: 1; transform: translateY(0) scale(1); }
       }
       .font-script { font-family: 'Cormorant Garamond', Georgia, serif; }
+      .hidden { display: none !important; }
 
       .welcome-badge, .game-stamp {
         display: inline-flex;
@@ -266,16 +289,17 @@
         font-size: clamp(15px, 2.4vw, 18px);
         color: rgba(255, 252, 242, 0.88);
         line-height: 1.55;
-        margin: 0 0 24px;
+        margin: 0 0 22px;
       }
 
+      /* Demo (welcome) */
       .acai-demo {
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 12px;
         font-size: clamp(34px, 7vw, 48px);
-        margin-bottom: 18px;
+        margin-bottom: 16px;
         filter: drop-shadow(0 6px 20px rgba(236, 72, 153, 0.35));
       }
       .demo-emoji {
@@ -292,6 +316,27 @@
         0%, 100% { transform: translateY(0); }
         50% { transform: translateY(-10px) rotate(5deg); }
       }
+
+      /* Power-ups preview */
+      .powerups-preview {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+      }
+      .powerup-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        background: rgba(251, 191, 36, 0.1);
+        border: 1px solid rgba(251, 191, 36, 0.35);
+        border-radius: 999px;
+        font-size: 11px;
+        color: #FDE68A;
+      }
+      .pu-icon { font-size: 14px; }
 
       .controls-preview {
         display: flex;
@@ -337,7 +382,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 12px;
+        margin-bottom: 10px;
         gap: 8px;
       }
       .hud-item { text-align: center; }
@@ -364,19 +409,75 @@
       .hud-hearts { font-size: 16px; letter-spacing: 2px; }
       .hud-heart { display: inline-block; transition: opacity 0.3s, transform 0.3s; }
       .hud-heart.is-lost { opacity: 0.2; filter: grayscale(1); transform: scale(0.85) rotate(-12deg); }
-
-      .canvas-wrap {
-        position: relative;
-        width: 100%;
-        margin-bottom: 12px;
+      .hud-streak {
+        font-family: 'Cinzel', serif;
+        font-weight: 700;
+        font-size: 17px;
+        color: rgba(255, 252, 242, 0.55);
+        transition: color 0.2s, transform 0.2s, text-shadow 0.2s;
       }
+      .hud-streak.is-on {
+        color: #FBBF24;
+        text-shadow: 0 0 14px rgba(251, 191, 36, 0.8);
+        animation: streakPulse 1.1s ease-in-out infinite;
+      }
+      @keyframes streakPulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.12); }
+      }
+      .hud-streak.is-on-fire {
+        background: linear-gradient(90deg, #FBBF24, #EC4899, #A855F7, #FBBF24);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        animation: streakPulse 0.8s ease-in-out infinite, rainbowShift 2s linear infinite;
+      }
+      @keyframes rainbowShift {
+        from { background-position: 0% center; }
+        to { background-position: 200% center; }
+      }
+
+      /* Power-up banner */
+      .powerup-banner {
+        background: linear-gradient(135deg, rgba(251, 191, 36, 0.18), rgba(236, 72, 153, 0.18));
+        border: 1.5px solid rgba(251, 191, 36, 0.5);
+        border-radius: 12px;
+        padding: 10px 16px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        font-family: 'Cinzel', serif;
+        font-weight: 700;
+        font-size: 14px;
+        color: #FDE68A;
+        letter-spacing: 0.05em;
+        animation: powerupIn 0.4s ease-out;
+      }
+      @keyframes powerupIn {
+        from { transform: scale(0.7); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+      }
+      .powerup-banner #powerup-icon {
+        font-size: 22px;
+        animation: powerupIcon 1s ease-in-out infinite;
+      }
+      @keyframes powerupIcon {
+        0%, 100% { transform: scale(1) rotate(-5deg); }
+        50% { transform: scale(1.15) rotate(5deg); }
+      }
+
+      /* Canvas */
+      .canvas-wrap { position: relative; width: 100%; margin-bottom: 12px; }
       #game-canvas {
         width: 100%;
         height: auto;
         max-width: 720px;
         aspect-ratio: 720 / 380;
         background:
-          radial-gradient(ellipse at 50% 0%, #FBCFE8 0%, #F472B6 30%, #EC4899 60%, #BE185D 100%);
+          radial-gradient(ellipse at 50% 0%, #FBCFE8 0%, #F472B6 30%, #EC4899 60%, #831843 100%);
         border: 1.5px solid rgba(255, 192, 203, 0.4);
         border-radius: 16px;
         display: block;
@@ -384,6 +485,14 @@
         cursor: none;
         touch-action: none;
         box-shadow: 0 14px 40px -18px rgba(0, 0, 0, 0.6);
+      }
+      .canvas-wrap.shaking { animation: canvasShake 0.4s; }
+      @keyframes canvasShake {
+        0%, 100% { transform: translateX(0); }
+        20% { transform: translateX(-6px); }
+        40% { transform: translateX(6px); }
+        60% { transform: translateX(-4px); }
+        80% { transform: translateX(4px); }
       }
       .canvas-instructions {
         position: absolute;
@@ -421,12 +530,7 @@
         color: rgba(251, 207, 232, 0.8);
         margin-bottom: 8px;
       }
-      .combo-slots {
-        display: flex;
-        gap: 8px;
-        justify-content: center;
-        flex-wrap: wrap;
-      }
+      .combo-slots { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
       .combo-slot {
         width: 38px; height: 38px;
         border-radius: 10px;
@@ -445,7 +549,6 @@
         background: linear-gradient(135deg, rgba(251, 207, 232, 0.18) 0%, rgba(168, 85, 247, 0.18) 100%);
         border-style: solid;
         border-color: #FBCFE8;
-        animation: slotPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
       }
       .combo-slot.empty { color: rgba(255, 192, 203, 0.35); }
       @keyframes slotPop {
@@ -472,15 +575,42 @@
       }
 
       /* Resultado */
+      .result-screen { position: relative; }
+      .confetti-bg { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+      .confetti-piece {
+        position: absolute;
+        top: -20px;
+        width: 8px; height: 14px;
+        background: linear-gradient(180deg, #FBCFE8 0%, #EC4899 100%);
+        animation: confettiFall linear infinite;
+        opacity: 0.85;
+      }
+      .confetti-piece:nth-child(3n) { background: linear-gradient(180deg, #FBBF24 0%, #F59E0B 100%); }
+      .confetti-piece:nth-child(3n+1) { background: linear-gradient(180deg, #A855F7 0%, #7C3AED 100%); }
+      .confetti-piece:nth-child(3n+2) { background: linear-gradient(180deg, #F472B6 0%, #BE185D 100%); }
+      @keyframes confettiFall {
+        0% { transform: translateY(0) rotate(0deg); opacity: 0.85; }
+        100% { transform: translateY(900px) rotate(540deg); opacity: 0; }
+      }
+
+      .result-content { position: relative; z-index: 1; }
       .result-crown {
-        font-size: 64px;
+        font-size: 68px;
         margin-bottom: 4px;
-        filter: drop-shadow(0 6px 20px rgba(236, 72, 153, 0.5));
+        filter: drop-shadow(0 6px 20px rgba(236, 72, 153, 0.6));
         animation: crownFloat 3s ease-in-out infinite;
       }
       @keyframes crownFloat {
         0%, 100% { transform: translateY(0) rotate(-3deg); }
-        50% { transform: translateY(-8px) rotate(3deg); }
+        50% { transform: translateY(-9px) rotate(3deg); }
+      }
+
+      /* Mariela Chef (preview) */
+      .chef-mariela {
+        width: 110px;
+        height: 130px;
+        margin: 14px auto 6px;
+        position: relative;
       }
 
       .result-bowl {
@@ -489,29 +619,29 @@
           rgba(255, 252, 242, 0.04);
         border: 1px solid rgba(255, 192, 203, 0.22);
         border-radius: 18px;
-        padding: 16px 20px;
-        margin: 16px 0;
+        padding: 14px 18px;
+        margin: 12px 0;
         display: flex;
         align-items: center;
-        gap: 16px;
+        gap: 14px;
       }
       .bowl-icon { font-size: 56px; filter: drop-shadow(0 4px 14px rgba(236, 72, 153, 0.5)); }
       .bowl-content {
         font-family: 'Cormorant Garamond', serif;
         font-style: italic;
-        font-size: 16px;
-        color: rgba(255, 252, 242, 0.9);
+        font-size: 15px;
+        color: rgba(255, 252, 242, 0.92);
         text-align: left;
         flex: 1;
-        line-height: 1.4;
+        line-height: 1.45;
       }
 
       .result-stats {
         background: rgba(255, 252, 242, 0.04);
         border: 1px solid rgba(255, 192, 203, 0.22);
         border-radius: 14px;
-        padding: 12px 20px;
-        margin: 12px 0;
+        padding: 12px 18px;
+        margin: 10px 0;
       }
       .stat-row {
         display: flex;
@@ -538,6 +668,18 @@
         color: rgba(255, 252, 242, 0.92);
         margin: 14px 0 6px;
         padding: 0 6px;
+      }
+      .result-punchline {
+        display: inline-block;
+        font-style: normal;
+        font-family: 'Cinzel', serif;
+        font-weight: 700;
+        font-size: 15px;
+        background: linear-gradient(120deg, #FBCFE8, #EC4899);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        margin-top: 6px;
       }
       .result-footer {
         display: flex;
@@ -570,39 +712,50 @@
       const BOWL_W = 110;
       const BOWL_H = 56;
       const BOWL_SPEED = 320;
-      const TOTAL_INGREDIENTS_TO_WIN = 6;
 
       type Ing = {
         emoji: string;
         label: string;
         points: number;
         color: string;
+        type: 'normal' | 'golden' | 'ice' | 'star';
       };
 
-      const ingredients: Ing[] = [
-        { emoji: '🍓', label: 'fresa', points: 15, color: '#EF4444' },
-        { emoji: '🫐', label: 'arándano', points: 12, color: '#7C3AED' },
-        { emoji: '🍌', label: 'plátano', points: 10, color: '#FBBF24' },
-        { emoji: '🥝', label: 'kiwi', points: 14, color: '#16A34A' },
-        { emoji: '🥥', label: 'coco', points: 10, color: '#FFFCF2' },
-        { emoji: '🍯', label: 'miel', points: 20, color: '#F59E0B' },
-        { emoji: '🍓', label: 'fresa', points: 15, color: '#EF4444' },
-        { emoji: '🍫', label: 'chocolate', points: 18, color: '#7C2D12' },
-        { emoji: '🫐', label: 'arándano', points: 12, color: '#7C3AED' }
+      const normalIngredients: Ing[] = [
+        { emoji: '🍓', label: 'fresa', points: 15, color: '#EF4444', type: 'normal' },
+        { emoji: '🫐', label: 'arándano', points: 12, color: '#7C3AED', type: 'normal' },
+        { emoji: '🍌', label: 'plátano', points: 10, color: '#FBBF24', type: 'normal' },
+        { emoji: '🥝', label: 'kiwi', points: 14, color: '#16A34A', type: 'normal' },
+        { emoji: '🥥', label: 'coco', points: 10, color: '#FFFCF2', type: 'normal' },
+        { emoji: '🍫', label: 'chocolate', points: 18, color: '#7C2D12', type: 'normal' }
       ];
 
       // ============================================================
       // ESTADO
       // ============================================================
-      type Drop = { x: number; y: number; vy: number; ing: Ing; rot: number; rotV: number; scaleIn: number };
-      type Particle = { x: number; y: number; vx: number; vy: number; life: number; maxLife: number; color: string; size: number; emoji: string };
+      type Drop = {
+        x: number; y: number; vy: number;
+        ing: Ing;
+        rot: number; rotV: number;
+        scaleIn: number;
+        glow: number;
+      };
+
+      type Particle = {
+        x: number; y: number;
+        vx: number; vy: number;
+        life: number; maxLife: number;
+        color: string; size: number; emoji: string;
+      };
+
+      type Face = 'neutral' | 'happy' | 'excited' | 'surprised' | 'sad' | 'love';
 
       const state = {
         bowlX: (W - BOWL_W) / 2,
         bowlTargetX: (W - BOWL_W) / 2,
         drops: [] as Drop[],
         particles: [] as Particle[],
-        caught: [] as Ing[], // últimos atrapados
+        caught: [] as Ing[],
         combo: 0, bestCombo: 0,
         score: 0,
         lives: 3,
@@ -610,8 +763,26 @@
         time: 0,
         lastFrame: performance.now(),
         gameOver: false,
-        won: false
+        won: false,
+        // Power-ups
+        x2Timer: 0,
+        freezeTimer: 0,
+        shieldTimer: 0,
+        // Visual
+        shakeTimer: 0,
+        face: 'neutral' as Face,
+        faceTimer: 0
       };
+
+      // ============================================================
+      // CANVAS + DPR
+      // ============================================================
+      const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
+      const ctx = canvas.getContext('2d')!;
+      const DPR = Math.min(2, window.devicePixelRatio || 1);
+      canvas.width = W * DPR;
+      canvas.height = H * DPR;
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
 
       // ============================================================
       // ENTRADA
@@ -619,23 +790,15 @@
       const keys: Record<string, boolean> = {};
       let mouseX = W / 2;
 
-      const toLogical = (cx: number, cy: number) => {
-        const r = (document.getElementById('game-canvas') as HTMLCanvasElement).getBoundingClientRect();
-        return { x: ((cx - r.left) / r.width) * W, y: ((cy - r.top) / r.height) * H };
+      const toLogical = (cx: number) => {
+        const r = canvas.getBoundingClientRect();
+        return ((cx - r.left) / r.width) * W;
       };
 
-      function setBowlFromClientX(clientX: number) {
-        const p = toLogical(clientX, 0);
-        mouseX = p.x;
-        state.bowlTargetX = clamp(p.x - BOWL_W / 2, 0, W - BOWL_W);
-      }
-
-      const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
-      const ctx = canvas.getContext('2d')!;
-      const DPR = Math.min(2, window.devicePixelRatio || 1);
-      canvas.width = W * DPR;
-      canvas.height = H * DPR;
-      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      const setBowlFromClientX = (cx: number) => {
+        mouseX = clamp(toLogical(cx), 0, W);
+        state.bowlTargetX = clamp(mouseX - BOWL_W / 2, 0, W - BOWL_W);
+      };
 
       canvas.addEventListener('mousemove', (e) => setBowlFromClientX(e.clientX));
       canvas.addEventListener('touchmove', (e) => {
@@ -663,34 +826,79 @@
       }
 
       // ============================================================
-      // FÁBRICAS
+      // POWER-UPS
       // ============================================================
       function spawnDrop() {
-        const ing = ingredients[Math.floor(Math.random() * ingredients.length)];
+        const r = Math.random();
+        let ing: Ing;
+        // Power-ups raros según combo
+        if (state.combo >= 5 && r < 0.1) {
+          ing = { emoji: '⭐', label: 'estrella', points: 100, color: '#FCD34D', type: 'star' };
+        } else if (state.combo >= 3 && r < 0.12) {
+          ing = { emoji: '❄️', label: 'copa helada', points: 20, color: '#60A5FA', type: 'ice' };
+        } else if (r < 0.08) {
+          ing = { emoji: '🌟', label: 'fresa dorada', points: 20, color: '#FBBF24', type: 'golden' };
+        } else {
+          ing = normalIngredients[Math.floor(Math.random() * normalIngredients.length)];
+        }
         state.drops.push({
           x: Math.random() * (W - 30) + 15,
           y: -30,
-          vy: 60 + Math.random() * 50 + state.combo * 2, // cae más rápido con combo
+          vy: (60 + Math.random() * 50 + state.combo * 2) * (state.freezeTimer > 0 ? 0.4 : 1),
           ing,
           rot: Math.random() * Math.PI * 2,
           rotV: (Math.random() - 0.5) * 4,
-          scaleIn: 0
+          scaleIn: 0,
+          glow: ing.type !== 'normal' ? 1 : 0
         });
       }
 
-      function burst(x: number, y: number, color: string, count = 8, emoji = '✨') {
+      function activatePowerUp(type: Ing['type']) {
+        if (type === 'golden') {
+          state.x2Timer = 6;
+          showPowerUpBanner('🌟', '¡Puntos x2! (6s)');
+        } else if (type === 'ice') {
+          state.freezeTimer = 4;
+          showPowerUpBanner('❄️', '¡Slow Time! (4s)');
+        } else if (type === 'star') {
+          showPowerUpBanner('⭐', '¡BONUS +100!');
+        }
+      }
+
+      function showPowerUpBanner(icon: string, text: string) {
+        const banner = document.getElementById('powerup-banner')!;
+        const iconEl = document.getElementById('powerup-icon')!;
+        const textEl = document.getElementById('powerup-text')!;
+        iconEl.textContent = icon;
+        textEl.textContent = text;
+        banner.classList.remove('hidden');
+        banner.style.animation = 'none';
+        void banner.offsetWidth;
+        banner.style.animation = 'powerupIn 0.4s ease-out';
+      }
+
+      function updatePowerUpBanner() {
+        if (state.x2Timer <= 0 && state.freezeTimer <= 0 && state.shieldTimer <= 0) {
+          document.getElementById('powerup-banner')?.classList.add('hidden');
+        }
+      }
+
+      // ============================================================
+      // FÁBRICAS (partículas + puntos flotantes)
+      // ============================================================
+      function burst(x: number, y: number, color: string, count = 12, emoji = '✨') {
         for (let i = 0; i < count; i++) {
           const a = (Math.PI * 2 * i) / count + Math.random() * 0.5;
-          const s = 70 + Math.random() * 60;
+          const s = 70 + Math.random() * 80;
           state.particles.push({
             x, y,
             vx: Math.cos(a) * s,
             vy: Math.sin(a) * s - 30,
-            life: 0.6,
-            maxLife: 0.6,
+            life: 0.7,
+            maxLife: 0.7,
             color,
             size: 3 + Math.random() * 3,
-            emoji: emoji
+            emoji
           });
         }
       }
@@ -702,13 +910,8 @@
         el.textContent = text;
         el.style.left = `${x}px`;
         el.style.top = `${y}px`;
-        (document.getElementById('acai-frame')!).appendChild(el);
+        document.getElementById('acai-frame')!.appendChild(el);
         window.setTimeout(() => el.remove(), 1000);
-      }
-
-      function framePosOf(clientX: number, clientY: number) {
-        const fr = (document.getElementById('acai-frame') as HTMLElement).getBoundingClientRect();
-        return { x: clientX - fr.left, y: clientY - fr.top };
       }
 
       // ============================================================
@@ -716,9 +919,14 @@
       // ============================================================
       function update(dt: number) {
         state.time += dt;
+        state.x2Timer = Math.max(0, state.x2Timer - dt);
+        state.freezeTimer = Math.max(0, state.freezeTimer - dt);
+        state.shieldTimer = Math.max(0, state.shieldTimer - dt);
+        state.shakeTimer = Math.max(0, state.shakeTimer - dt);
+        state.faceTimer = Math.max(0, state.faceTimer - dt);
         if (state.gameOver) return;
 
-        // Mover bowl (mouse o teclado)
+        // Bowl (mouse + teclado)
         let vx = 0;
         if (keys['ArrowLeft'] || keys['a'] || keys['A']) vx -= BOWL_SPEED;
         if (keys['ArrowRight'] || keys['d'] || keys['D']) vx += BOWL_SPEED;
@@ -734,58 +942,55 @@
           state.spawnTimer = Math.max(0.42, 1.2 - state.combo * 0.03);
         }
 
-        // Caída de ingredientes
+        // Update drops
         const bowlLeft = state.bowlX;
         const bowlRight = state.bowlX + BOWL_W;
         for (const d of state.drops) {
           d.y += d.vy * dt;
           d.rot += d.rotV * dt;
           d.scaleIn = Math.min(1, d.scaleIn + dt * 6);
+          if (d.glow > 0) d.glow = Math.max(0, d.glow - dt);
 
-          // Captura (cuando está en la "boca" del bowl)
           const inBowlX = d.x > bowlLeft + 6 && d.x < bowlRight - 6;
           if (inBowlX && d.y > BOWL_Y - 18 && d.y < BOWL_Y + 6) {
-            // ¡Atrapado!
-            state.score += d.ing.points;
+            // Atrapado
+            const mult = state.x2Timer > 0 ? 2 : 1;
+            const pts = d.ing.points * mult;
+            state.score += pts;
             state.combo++;
             state.bestCombo = Math.max(state.bestCombo, state.combo);
             state.caught.push(d.ing);
-            if (state.caught.length > TOTAL_INGREDIENTS_TO_WIN) state.caught.shift();
+            if (state.caught.length > 6) state.caught.shift();
 
-            // Bonus combo
-            if (state.combo >= 3) {
-              state.score += (state.combo - 2) * 5;
-            }
+            if (state.combo >= 3) state.score += (state.combo - 2) * 5 * mult;
 
-            burst(d.x, d.y, d.ing.color, 12, d.ing.emoji);
+            if (d.ing.type !== 'normal') activatePowerUp(d.ing.type);
+
+            burst(d.x, d.y, d.ing.color, 14, d.ing.emoji);
             const fr = (document.getElementById('acai-frame') as HTMLElement).getBoundingClientRect();
-            const cnv = (document.getElementById('game-canvas') as HTMLCanvasElement).getBoundingClientRect();
+            const cnv = canvas.getBoundingClientRect();
             const fx = (cnv.left - fr.left) + d.x;
             const fy = (cnv.top - fr.top) + d.y;
-            floatPts(fx, fy, `+${d.ing.points}`, '#FBCFE8');
+            floatPts(fx, fy - 26, `+${pts}`, mult > 1 ? '#FBBF24' : '#FBCFE8');
 
-            // Actualizar slot del HUD
             updateComboSlots();
-
-            // Verificar victoria
-            if (state.score >= 200 && !state.won) {
-              // condición de victoria: 200 pts alcanzados
-              state.won = true;
-              state.gameOver = true;
-              window.setTimeout(showResult, 600);
-            }
-
-            d.y = H + 100; // marca para eliminar
+            d.y = H + 100;
           }
         }
         state.drops = state.drops.filter((d) => d.y < H + 50);
 
-        // Ingredientes perdidos (los que no se atraparon)
+        // Perdidos
         for (const d of [...state.drops]) {
           if (d.y > H + 40) {
             state.combo = 0;
             state.lives--;
-            burst(d.x, BOWL_Y - 20, '#9CA3AF', 4, '💨');
+            state.shakeTimer = 0.4;
+            state.face = 'sad';
+            state.faceTimer = 1;
+            document.getElementById('canvas-wrap')?.classList.add('shaking');
+            setTimeout(() => document.getElementById('canvas-wrap')?.classList.remove('shaking'), 400);
+            burst(d.x, BOWL_Y - 20, '#9CA3AF', 5, '💨');
+            updateComboSlots();
             if (state.lives <= 0) {
               state.gameOver = true;
               window.setTimeout(showResult, 700);
@@ -793,6 +998,13 @@
           }
         }
         state.drops = state.drops.filter((d) => d.y < H + 50);
+
+        // Expresiones de la copa
+        if (state.faceTimer <= 0) {
+          if (state.combo >= 5) state.face = 'excited';
+          else if (state.combo >= 2) state.face = 'happy';
+          else state.face = 'neutral';
+        }
 
         // Partículas
         for (const p of state.particles) {
@@ -802,6 +1014,8 @@
           p.life -= dt;
         }
         state.particles = state.particles.filter((p) => p.life > 0);
+
+        updatePowerUpBanner();
       }
 
       function updateComboSlots() {
@@ -827,13 +1041,12 @@
       // RENDER
       // ============================================================
       function drawBackground() {
-        // Cielo (rosa/morado degradado ya está en CSS)
-        // Estrellas decorativas
-        for (let i = 0; i < 22; i++) {
+        // Decoraciones: chispas flotantes
+        for (let i = 0; i < 16; i++) {
           const sx = (i * 113.7) % W;
           const sy = (i * 47.3) % (BOWL_Y - 80);
           const tw = 0.4 + 0.5 * Math.abs(Math.sin(state.time * 1.6 + i));
-          ctx.globalAlpha = tw * 0.85;
+          ctx.globalAlpha = tw * 0.7;
           ctx.fillStyle = '#FFFCF2';
           ctx.beginPath();
           ctx.arc(sx, sy, 1.2, 0, Math.PI * 2);
@@ -861,6 +1074,19 @@
           ctx.translate(d.x, d.y);
           ctx.rotate(d.rot);
           ctx.scale(s, s);
+
+          // Glow para power-ups
+          if (d.ing.type !== 'normal' && d.glow > 0) {
+            const glowAlpha = d.glow * 0.5;
+            const glowColor = d.ing.type === 'golden' ? '#FBBF24' : d.ing.type === 'ice' ? '#60A5FA' : '#FCD34D';
+            ctx.globalAlpha = glowAlpha;
+            ctx.fillStyle = glowColor;
+            ctx.beginPath();
+            ctx.arc(0, 0, 28, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = s;
+          }
+
           // sombra
           ctx.globalAlpha = 0.25 * s;
           ctx.fillStyle = '#000';
@@ -868,7 +1094,7 @@
           ctx.ellipse(0, 8, 14, 4, 0, 0, Math.PI * 2);
           ctx.fill();
           ctx.globalAlpha = s;
-          // emoji
+
           ctx.font = '34px serif';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
@@ -898,6 +1124,10 @@
       function drawBowl() {
         const x = state.bowlX;
         const y = BOWL_Y;
+        const shake = state.shakeTimer > 0 ? Math.sin(state.time * 50) * 3 : 0;
+
+        ctx.save();
+        ctx.translate(shake, 0);
 
         // sombra
         ctx.fillStyle = 'rgba(0,0,0,0.3)';
@@ -905,7 +1135,7 @@
         ctx.ellipse(x + BOWL_W / 2, y + BOWL_H - 4, BOWL_W / 2 + 8, 7, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // copa (bowl)
+        // copa
         const bGrad = ctx.createLinearGradient(x, y, x, y + BOWL_H);
         bGrad.addColorStop(0, '#F472B6');
         bGrad.addColorStop(1, '#9D174D');
@@ -919,7 +1149,6 @@
         ctx.closePath();
         ctx.fill();
 
-        // borde
         ctx.strokeStyle = 'rgba(255, 192, 203, 0.7)';
         ctx.lineWidth = 2;
         ctx.beginPath();
@@ -930,16 +1159,14 @@
         ctx.ellipse(x + BOWL_W / 2, y - 4, BOWL_W / 2 - 6, 4, 0, 0, Math.PI * 2);
         ctx.stroke();
 
-        // helado dentro (acumulado)
+        // helado acumulado dentro
         if (state.caught.length > 0) {
           ctx.save();
           ctx.beginPath();
           ctx.ellipse(x + BOWL_W / 2, y - 4, BOWL_W / 2 - 8, 6, 0, 0, Math.PI * 2);
           ctx.clip();
-          // base blanca
           ctx.fillStyle = '#FFF8FA';
           ctx.fillRect(x - 4, y - 12, BOWL_W + 8, 20);
-          // toppings dentro
           for (let i = 0; i < state.caught.length; i++) {
             const tx = x + 14 + i * 14;
             const ty = y - 8 + Math.sin(state.time * 2 + i) * 1.4;
@@ -951,21 +1178,108 @@
           ctx.restore();
         }
 
-        // combo indicator flotante
+        // CARA del helado (con expresión)
+        drawBowlFace(x + BOWL_W / 2, y - 12, state.face);
+
+        // combo indicator
         if (state.combo >= 2) {
           ctx.save();
           ctx.font = '700 14px Cinzel, serif';
           ctx.textAlign = 'center';
-          ctx.fillStyle = '#FBBF24';
-          ctx.globalAlpha = 0.9;
-          const cy = y - 22 + Math.sin(state.time * 6) * 2;
+          const cy = y - 32 + Math.sin(state.time * 6) * 2;
+          if (state.combo >= 7) {
+            // arcoíris en combos altos
+            const grad = ctx.createLinearGradient(x + BOWL_W / 2 - 30, 0, x + BOWL_W / 2 + 30, 0);
+            grad.addColorStop(0, '#FBBF24');
+            grad.addColorStop(0.33, '#EC4899');
+            grad.addColorStop(0.66, '#A855F7');
+            grad.addColorStop(1, '#60A5FA');
+            ctx.fillStyle = grad;
+          } else {
+            ctx.fillStyle = '#FBBF24';
+          }
           ctx.fillText(`🔥 x${state.combo}`, x + BOWL_W / 2, cy);
           ctx.restore();
         }
+
+        ctx.restore();
+      }
+
+      function drawBowlFace(cx: number, cy: number, face: Face) {
+        // cara del helado según estado
+        const bob = Math.sin(state.time * 2) * 0.5;
+        ctx.save();
+        ctx.translate(cx, cy + bob);
+        // ojos según face
+        ctx.fillStyle = '#1F2937';
+        ctx.strokeStyle = '#1F2937';
+        ctx.lineWidth = 1.6;
+        ctx.lineCap = 'round';
+
+        if (face === 'sad') {
+          // ojos cerrados ^ ^ (preocupado)
+          ctx.beginPath();
+          ctx.moveTo(-7, -2); ctx.quadraticCurveTo(-4, -5, -1, -2);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(1, -2); ctx.quadraticCurveTo(4, -5, 7, -2);
+          ctx.stroke();
+          // boca triste
+          ctx.beginPath();
+          ctx.arc(0, 6, 4, Math.PI + 0.3, Math.PI * 2 - 0.3);
+          ctx.stroke();
+        } else if (face === 'excited') {
+          // ojos brillantes o_o
+          ctx.beginPath();
+          ctx.arc(-3.5, -2, 2.2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(3.5, -2, 2.2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#FFFCF2';
+          ctx.beginPath();
+          ctx.arc(-2.8, -2.8, 0.9, 0, Math.PI * 2);
+          ctx.arc(4.2, -2.8, 0.9, 0, Math.PI * 2);
+          ctx.fill();
+          // sonrisa grande abierta
+          ctx.fillStyle = '#7F1D1D';
+          ctx.beginPath();
+          ctx.arc(0, 4, 4, 0.2, Math.PI - 0.2);
+          ctx.fill();
+        } else if (face === 'happy') {
+          // ojos felices ^_^
+          ctx.beginPath();
+          ctx.moveTo(-7, -2); ctx.quadraticCurveTo(-4, 0, -1, -2);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(1, -2); ctx.quadraticCurveTo(4, 0, 7, -2);
+          ctx.stroke();
+          // sonrisa
+          ctx.beginPath();
+          ctx.arc(0, 4, 3.5, 0.2, Math.PI - 0.2);
+          ctx.stroke();
+          // mejillas
+          ctx.fillStyle = 'rgba(244, 114, 182, 0.4)';
+          ctx.beginPath();
+          ctx.arc(-6, 3, 1.8, 0, Math.PI * 2);
+          ctx.arc(6, 3, 1.8, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          // neutral
+          ctx.beginPath();
+          ctx.arc(-3.5, -2, 1.8, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(3.5, -2, 1.8, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(0, 4, 2.5, 0.3, Math.PI - 0.3);
+          ctx.stroke();
+        }
+        ctx.restore();
       }
 
       function drawCursor() {
-        // pequeño indicador en mouse (pc)
         const isTouch = matchMedia('(hover: none) and (pointer: coarse)').matches;
         if (isTouch) return;
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
@@ -986,7 +1300,7 @@
       }
 
       // ============================================================
-      // GAME LOOP (loop único)
+      // GAME LOOP
       // ============================================================
       function loop(now: number) {
         const dt = Math.min(0.05, (now - state.lastFrame) / 1000);
@@ -1006,7 +1320,9 @@
 
         const titleEl = document.getElementById('result-title')!;
         titleEl.textContent = won
-          ? '¡Tu açaí bowl quedó hermoso!'
+          ? state.caught.length === 6
+            ? '¡Tu açaí bowl quedó perfecto!'
+            : '¡Tu bowl quedó hermoso!'
           : '¡Casi lo logras!';
 
         const content = document.getElementById('bowl-content')!;
@@ -1025,8 +1341,116 @@
         (document.getElementById('stat-count')!).textContent = String(state.caught.length);
         (document.getElementById('stat-streak')!).textContent = `x${state.bestCombo}`;
 
+        // Mariela Chef preview
+        drawChefMariela();
+
         showScreen('result');
         sendToWorker(won);
+      }
+
+      // Mini preview de Mariela Chef
+      function drawChefMariela() {
+        const host = document.getElementById('chef-mariela') as HTMLCanvasElement | null;
+        if (!host) return;
+        const pctx = host.getContext('2d')!;
+        const pdpr = Math.min(2, window.devicePixelRatio || 1);
+        host.width = 110 * pdpr;
+        host.height = 130 * pdpr;
+        pctx.setTransform(pdpr, 0, 0, pdpr, 0, 0);
+
+        const d = (i: number) => i * Math.PI * 2 / 16;
+
+        const cx = 55, cy = 65;
+        // gorro de chef
+        pctx.fillStyle = '#FFFCF2';
+        pctx.beginPath();
+        pctx.ellipse(cx, cy - 38, 22, 16, 0, 0, Math.PI * 2);
+        pctx.fill();
+        pctx.fillStyle = '#9CA3AF';
+        pctx.beginPath();
+        pctx.ellipse(cx, cy - 36, 22, 8, 0, 0, Math.PI * 2);
+        pctx.fill();
+        pctx.fillStyle = '#FFFCF2';
+        pctx.beginPath();
+        pctx.ellipse(cx, cy - 32, 18, 6, 0, 0, Math.PI * 2);
+        pctx.fill();
+
+        // cabeza
+        pctx.fillStyle = '#FEF3C7';
+        pctx.strokeStyle = '#D97706';
+        pctx.lineWidth = 1.4;
+        pctx.beginPath();
+        pctx.arc(cx, cy - 12, 14, 0, Math.PI * 2);
+        pctx.fill();
+        pctx.stroke();
+
+        // cabello
+        pctx.fillStyle = '#451A03';
+        pctx.beginPath();
+        pctx.arc(cx, cy - 18, 13, Math.PI * 0.95, Math.PI * 2.05);
+        pctx.fill();
+
+        // cara
+        pctx.fillStyle = '#1F2937';
+        pctx.beginPath();
+        pctx.arc(cx - 4, cy - 12, 1.8, 0, Math.PI * 2);
+        pctx.arc(cx + 4, cy - 12, 1.8, 0, Math.PI * 2);
+        pctx.fill();
+        pctx.fillStyle = '#FFFCF2';
+        pctx.beginPath();
+        pctx.arc(cx - 3.3, cy - 12.8, 0.7, 0, Math.PI * 2);
+        pctx.arc(cx + 4.7, cy - 12.8, 0.7, 0, Math.PI * 2);
+        pctx.fill();
+        pctx.fillStyle = 'rgba(244, 114, 182, 0.4)';
+        pctx.beginPath();
+        pctx.arc(cx - 8, cy - 8, 2, 0, Math.PI * 2);
+        pctx.arc(cx + 8, cy - 8, 2, 0, Math.PI * 2);
+        pctx.fill();
+        pctx.strokeStyle = '#7C2D12';
+        pctx.lineWidth = 1.2;
+        pctx.beginPath();
+        pctx.arc(cx, cy - 7, 3.5, 0.3, Math.PI - 0.3);
+        pctx.stroke();
+
+        // cuerpo (chaqueta de chef)
+        const bodyGrad = pctx.createLinearGradient(cx - 24, cy + 2, cx + 24, cy + 2);
+        bodyGrad.addColorStop(0, '#FFFCF2');
+        bodyGrad.addColorStop(1, '#E5E7EB');
+        pctx.fillStyle = bodyGrad;
+        pctx.beginPath();
+        pctx.moveTo(cx - 22, cy + 2);
+        pctx.quadraticCurveTo(cx - 28, cy + 30, cx - 24, cy + 56);
+        pctx.lineTo(cx + 24, cy + 56);
+        pctx.quadraticCurveTo(cx + 28, cy + 30, cx + 22, cy + 2);
+        pctx.closePath();
+        pctx.fill();
+        pctx.strokeStyle = '#9CA3AF';
+        pctx.lineWidth = 1.5;
+        pctx.stroke();
+
+        // botones chaqueta
+        pctx.fillStyle = '#1F2937';
+        pctx.beginPath();
+        pctx.arc(cx - 8, cy + 18, 1.6, 0, Math.PI * 2);
+        pctx.arc(cx + 8, cy + 18, 1.6, 0, Math.PI * 2);
+        pctx.arc(cx, cy + 30, 1.6, 0, Math.PI * 2);
+        pctx.fill();
+
+        // cuchara
+        pctx.save();
+        pctx.translate(cx + 26, cy + 18);
+        pctx.rotate(-0.35);
+        pctx.fillStyle = '#94A3B8';
+        pctx.beginPath();
+        pctx.ellipse(0, 0, 5, 8, 0, 0, Math.PI * 2);
+        pctx.fill();
+        pctx.fillStyle = '#FBBF24';
+        pctx.beginPath();
+        pctx.ellipse(0, -3, 4, 4, 0, 0, Math.PI * 2);
+        pctx.fill();
+        pctx.fillStyle = '#78350F';
+        pctx.fillRect(-1, 6, 2, 18);
+        pctx.restore();
       }
 
       const workerUrl = 'https://mariela-responses.andyguzman117.workers.dev';
@@ -1057,6 +1481,10 @@
         state.spawnTimer = 0.7;
         state.gameOver = false;
         state.won = false;
+        state.x2Timer = 0;
+        state.freezeTimer = 0;
+        state.shieldTimer = 0;
+        state.face = 'neutral';
         updateComboSlots();
         showScreen('game');
         state.lastFrame = performance.now();
